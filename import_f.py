@@ -10,16 +10,25 @@ Created on Mon Apr 30 14:36:55 2018
 """
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
+#import sys
 
 path = "d:\\therm_transport\\thermal_cond\\FF2mKheat.dat"
+num_exp=10 # number of point around pulse to remove
 
 data=np.genfromtxt(path, unpack=True, skip_header=1, usecols = (2, 5, 6, 13))
 """ 0 - time; 1 - frequency; 2 - Q; 3 - Tmct"""
 data[0] = data[0]-data[0][0] 
-val_good=np.where(abs(data[2])<2000)[0]
-Q=data[2][val_good]
-time=data[0][val_good]
+
+a=np.where(abs(data[2])>2000)[0]
+b=[]
+
+for i in a:
+    for j in range(-num_exp,num_exp):
+        b.append(i+j)
+d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
+
+Q=data[2][d]
+time=data[0][d]
 # plotting
 plt.plot(time, Q)
 plt.xlabel('time (s)')
@@ -28,7 +37,3 @@ plt.title('Q vs time')
 plt.grid(True)
 #plt.savefig("test.png")
 plt.show()
-
-print(sys.getsizeof(data))
-print(a)
-print(b)
