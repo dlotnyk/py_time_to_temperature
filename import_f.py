@@ -10,15 +10,18 @@ Created on Mon Apr 30 14:36:55 2018
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 path = "d:\\therm_transport\\thermal_cond\\FF2mKheat.dat"
 
 data=np.genfromtxt(path, unpack=True, skip_header=1, usecols = (2, 5, 6, 13))
 """ 0 - time; 1 - frequency; 2 - Q; 3 - Tmct"""
 data[0] = data[0]-data[0][0] 
-
+val_good=np.where(abs(data[2])<2000)[0]
+Q=data[2][val_good]
+time=data[0][val_good]
 # plotting
-plt.plot(data[0], data[2])
+plt.plot(time, Q)
 plt.xlabel('time (s)')
 plt.ylabel('Q')
 plt.title('Q vs time')
@@ -26,5 +29,6 @@ plt.grid(True)
 #plt.savefig("test.png")
 plt.show()
 
-
-#print(data[3])
+print(sys.getsizeof(data))
+print(a)
+print(b)
