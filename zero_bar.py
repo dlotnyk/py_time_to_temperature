@@ -12,14 +12,14 @@ def import_fun(path):
     F=[]
     Q=[]
     T=[]
-    print(path)
+    #print(path)
     for p in path:
-        print(p)
+        #print(p)
         num_exp=10 # number of point around pulse to remove
         data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
-        print(np.shape(data)[1])
+        #print(np.shape(data)[1])
         
-        a=np.where(abs(data[2])>2000)[0]
+        a=np.where(abs(data[2])>1500)[0] # pulse removal
         b=[]
         for i in a:
             for j in range(-num_exp,num_exp):
@@ -40,13 +40,14 @@ def import_fun(path):
         Q=Q+q1
         T=T+temp1
     print(np.shape(F))
-        
-    return time,Q
-
+    time=time-time[0] 
+    return time,Q,T
+# Fork 1
 dir="d:\\therm_transport\\data\\0bar\\2018FEB\\"
-path=[dir+"20180208\\CF0p6mK.dat",dir+"20180209\\CF0p4mK.dat"]
-
-time,Q=import_fun(path)
+path1=[dir+"20180208\\CF0p6mK.dat",dir+"20180209\\CF0p4mK.dat",dir+"20180210\\CF0p8mK.dat"]
+# Fork 2
+path2=[dir+"20180208\\FF0p6mK.dat",dir+"20180209\\FF0p4mK.dat",dir+"20180210\\FF0p8mK.dat"]
+time,Q,T=import_fun(path2)
 
 # plotting
 fig1 = plt.figure(1, clear = True)
@@ -55,4 +56,12 @@ ax1.set_ylabel('Q')
 ax1.set_xlabel('time')
 ax1.set_title('Q vs time')
 line, = ax1.plot(time, Q, color='blue', lw=2)
+plt.show()
+
+fig2 = plt.figure(2, clear = True)
+ax2 = fig2.add_subplot(111)
+ax2.set_ylabel('Q')
+ax2.set_xlabel('temperature')
+ax2.set_title('Q vs temperature')
+line, = ax2.plot(time, T, color='blue', lw=2)
 plt.show()
