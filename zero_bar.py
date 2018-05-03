@@ -64,26 +64,57 @@ class timetotemp:
         T=T[self.num1:self.num2]
         time=time-time[0] 
         return time,Q,T        
+    
+    def plotting(self,*args):
+        '''simplfied, i hope, func for plotting'''
+        # 0 - number of fig; 1 - X; 2 - Y; 3 - label X; 4 - label Y
+        fig2 = plt.figure(args[0], clear = True)
+        ax2 = fig2.add_subplot(111)
+        ax2.set_ylabel(args[4])
+        ax2.set_xlabel(args[3])
+        ax2.set_title(args[4]+' vs '+args[3])
+        if args[1]==0:
+            X = self.time
+        elif args[1]==1:
+            X = self.Q
+        elif args[1]==2:
+            X = self.T
+        elif args[1]==3:
+            X=range(np.shape(self.time)[0])
+            
+        if args[2]==0:
+            Y = self.time
+        elif args[2]==1:
+            Y = self.Q
+        elif args[2]==2:
+            Y = self.T
+        elif args[2]==3:
+            Y=range(np.shape(self.time)[0])
+            
+        ax2.scatter(X, Y, color='blue',s=0.5)
+        plt.show()
 
-
+# main program statrs here
 A=timetotemp(2,10,8885,43930)
+A.plotting(1,3,1,'time','Q')
+A.plotting(2,0,2,'time','T')
 #time,Q,T=import_fun(path2)
 
 
-ind1=range(np.shape(A.time)[0])
-# plotting
-fig1 = plt.figure(1, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time')
-ax1.set_title('Q vs time')
-line = ax1.plot(ind1, A.Q, color='blue', lw=1)
-plt.show()
-
-fig2 = plt.figure(2, clear = True)
-ax2 = fig2.add_subplot(111)
-ax2.set_ylabel('T')
-ax2.set_xlabel('time')
-ax2.set_title('Q vs temperature')
-scatter = ax2.scatter(A.time, A.T, color='blue')
-plt.show()
+#ind1=range(np.shape(A.time)[0])
+## plotting
+#fig1 = plt.figure(1, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time')
+#ax1.set_title('Q vs time')
+#line = ax1.plot(ind1, A.Q, color='blue', lw=1)
+#plt.show()
+#
+#fig2 = plt.figure(2, clear = True)
+#ax2 = fig2.add_subplot(111)
+#ax2.set_ylabel('T')
+#ax2.set_xlabel('time')
+#ax2.set_title('Q vs temperature')
+#scatter = ax2.scatter(A.time, A.T, color='blue')
+#plt.show()
