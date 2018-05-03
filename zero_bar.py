@@ -15,8 +15,8 @@ class timetotemp:
         self.num2=nums[3]
         self.num_exp=nums[1]
         self.fork=nums[0]
-        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
-        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
+        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -39,11 +39,18 @@ class timetotemp:
             #num_exp=10 # number of point around pulse to remove
             data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
             a=np.where(abs(data[2])>1500)[0] # pulse removal
+            
             b=[]
             for i in a:
                 for j in range(-self.num_exp,self.num_exp):
                     b.append(i+j)
+            na=np.argwhere(np.isnan(data[3]))
+#            for ii in na:
+#                b.append(ii)
+            print("ind=",na[0])
+            print("T =", data[3][4])
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
+            
             t1=[]
             f1=[]
             q1=[]
@@ -59,6 +66,7 @@ class timetotemp:
             Q=Q+q1
             T=T+temp1
         #print(np.shape(F))
+        #print(np.shape(time))
         time=time[self.num1:self.num2]
         Q=Q[self.num1:self.num2]
         T=T[self.num1:self.num2]
@@ -92,14 +100,32 @@ class timetotemp:
             Y=range(np.shape(self.time)[0])
             
         ax2.scatter(X, Y, color='blue',s=0.5)
+        plt.grid()
         plt.show()
 
 # main program statrs here
-A=timetotemp(2,10,8885,43930)
+A=timetotemp(2,10,8885,47000) 
 A.plotting(1,3,1,'time','Q')
 A.plotting(2,0,2,'time','T')
-#time,Q,T=import_fun(path2)
-
+a=np.argwhere([A.T,np.isnan(A.T)])
+#print(a)
+#idx = np.isfinite(A.time) & np.isfinite(A.T)
+##ab = np.polyfit(x[idx], y[idx], 1)
+#fit = np.polyfit(A.time[idx],A.T[idx],1)
+#fit_fn = np.poly1d(fit) 
+#
+##plt.plot(x,y, 'yo', x, fit_fn(x), '--k')
+##time,Q,T=import_fun(path2)
+## plotting
+#fig1 = plt.figure(3, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time')
+#ax1.set_title('Q vs time')
+#sc1 = ax1.scatter(A.time, A.T, color='blue',s=0.5)
+#ln1=ax1.plot(A.time, fit_fn(A.time))
+#plt.grid()
+#plt.show()
 
 #ind1=range(np.shape(A.time)[0])
 ## plotting
