@@ -44,10 +44,13 @@ class timetotemp:
             for i in a:
                 for j in range(-self.num_exp,self.num_exp):
                     b.append(i+j)
-            na=np.argwhere(np.isnan(data[3]))
+            #na=np.argwhere(np.isnan(data[3]))
+            for ii in range(len(data[3])):
+                if not data[3][ii].isdigit():
+                    b.append(ii)
 #            for ii in na:
 #                b.append(ii)
-            print("ind=",na[0])
+           # print("ind=",na[0])
             print("T =", data[3][4])
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
             
@@ -107,7 +110,7 @@ class timetotemp:
 A=timetotemp(2,10,8885,47000) 
 A.plotting(1,3,1,'time','Q')
 A.plotting(2,0,2,'time','T')
-a=np.argwhere([A.T,np.isnan(A.T)])
+#a=np.argwhere([A.T,np.isnan(A.T)])
 #print(a)
 #idx = np.isfinite(A.time) & np.isfinite(A.T)
 ##ab = np.polyfit(x[idx], y[idx], 1)
