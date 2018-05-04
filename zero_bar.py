@@ -15,8 +15,8 @@ class timetotemp:
         self.num2=nums[3]
         self.num_exp=nums[1]
         self.fork=nums[0]
-        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
-        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
+        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -26,6 +26,7 @@ class timetotemp:
             self.time,self.Q,self.T=self.import_fun(self.path1)
         else:
             self.time,self.Q,self.T=self.import_fun(self.path2)
+        self.t_fit=self.temp_fit()
      
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
@@ -44,9 +45,7 @@ class timetotemp:
             for i in a:
                 for j in range(-self.num_exp,self.num_exp):
                     b.append(i+j)
-            na=np.argwhere(np.isnan(data[3]))
-            for ii in na:
-                b.append(ii[0])
+            
 #           
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
             
@@ -69,7 +68,47 @@ class timetotemp:
         T=T[self.num1:self.num2]
         time=time-time[0] 
         return time,Q,T        
-    
+    def temp_fit(self):
+        '''linear regression fit of temperature data, removing nan first'''
+        t1=[]
+        temp1=[]
+        w=[]
+        na=np.argwhere(np.isnan(self.T))
+        num_del=0
+        #print(len(self.T))
+        for ii in range(len(self.T)):
+            if num_del < len(na):
+                if ii == int(na[num_del]): 
+                    
+                    num_del+=1
+                else:
+                    t1.append(self.time[ii])
+                    temp1.append(self.T[ii])
+                    if ii < 0.6*len(self.T):
+                        w.append(1)
+                    else:
+                        w.append(10)
+            else:
+                t1.append(self.time[ii])
+                temp1.append(self.T[ii])
+                if ii < 0.6*len(self.T):
+                    w.append(1)
+                else:
+                    w.append(2)
+        
+        fit = np.polyfit(t1,temp1,1,w=w)
+        fit_fn = np.poly1d(fit) 
+        fig1 = plt.figure(3, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('T')
+        ax1.set_xlabel('time')
+        ax1.set_title('T vs time')
+        ax1.scatter(t1, temp1, color='blue',s=0.5) 
+        ax1.plot(t1,fit_fn(t1), color = 'red', lw=2)
+        plt.grid()
+        plt.show()
+        return fit
+                
     def plotting(self,*args):
         '''simplfied, i hope, func for plotting'''
         # 0 - number of fig; 1 - X; 2 - Y; 3 - label X; 4 - label Y
@@ -102,28 +141,28 @@ class timetotemp:
 
 # main program statrs here
 A=timetotemp(1,10,8885,47000) 
-A.plotting(3,3,1,'time','Q')
-A.plotting(4,0,2,'time','T')
+A.plotting(1,3,1,'time','Q')
+A.plotting(2,0,2,'time','T')
 
 #a=np.argwhere([A.T,np.isnan(A.T)])
 #print(a)
 #idx = np.isfinite(A.time) & np.isfinite(A.T)
 ##ab = np.polyfit(x[idx], y[idx], 1)
 #fit = np.polyfit(A.time[idx],A.T[idx],1)
-#fit_fn = np.poly1d(fit) 
+fit_fn = np.poly1d(A.t_fit) 
 #
 ##plt.plot(x,y, 'yo', x, fit_fn(x), '--k')
 ##time,Q,T=import_fun(path2)
 ## plotting
-#fig1 = plt.figure(3, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
-#ax1.set_xlabel('time')
-#ax1.set_title('Q vs time')
-#sc1 = ax1.scatter(A.time, A.T, color='blue',s=0.5)
-#ln1=ax1.plot(A.time, fit_fn(A.time))
-#plt.grid()
-#plt.show()
+fig1 = plt.figure(4, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time')
+ax1.set_title('Q vs time')
+ax1.scatter(A.time, A.T, color='blue',s=0.5)
+ax1.plot(A.time, fit_fn(A.time),color='red',lw=2)
+plt.grid()
+plt.show()
 
 #ind1=range(np.shape(A.time)[0])
 ## plotting
