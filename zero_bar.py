@@ -15,8 +15,8 @@ class timetotemp:
         self.num2=nums[3]
         self.num_exp=nums[1]
         self.fork=nums[0]
-        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
-        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
+        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -44,14 +44,10 @@ class timetotemp:
             for i in a:
                 for j in range(-self.num_exp,self.num_exp):
                     b.append(i+j)
-            #na=np.argwhere(np.isnan(data[3]))
-            for ii in range(len(data[3])):
-                if not data[3][ii].isdigit():
-                    b.append(ii)
-#            for ii in na:
-#                b.append(ii)
-           # print("ind=",na[0])
-            print("T =", data[3][4])
+            na=np.argwhere(np.isnan(data[3]))
+            for ii in na:
+                b.append(ii[0])
+#           
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
             
             t1=[]
@@ -68,8 +64,6 @@ class timetotemp:
             F=F+f1
             Q=Q+q1
             T=T+temp1
-        #print(np.shape(F))
-        #print(np.shape(time))
         time=time[self.num1:self.num2]
         Q=Q[self.num1:self.num2]
         T=T[self.num1:self.num2]
@@ -107,9 +101,10 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-A=timetotemp(2,10,8885,47000) 
-A.plotting(1,3,1,'time','Q')
-A.plotting(2,0,2,'time','T')
+A=timetotemp(1,10,8885,47000) 
+A.plotting(3,3,1,'time','Q')
+A.plotting(4,0,2,'time','T')
+
 #a=np.argwhere([A.T,np.isnan(A.T)])
 #print(a)
 #idx = np.isfinite(A.time) & np.isfinite(A.T)
