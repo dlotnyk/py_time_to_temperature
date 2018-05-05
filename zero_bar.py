@@ -6,17 +6,21 @@ Created on Wed May  2 12:09:15 2018
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.signal as ss
 
 class timetotemp:
-    '''obtain T1(Q1) for F1; using this obtain T2(Q1) for F2'''
+    '''obtain T1(Q1) for F1; using this obtain T2(Q1) for F2
+    Tc(0bar) = 0.929 mK
+    Tc(22) = 2.293 mK
+    Tc(9psi) = 1.013 mK'''
     def __init__(self,*nums):
-        
+        self.tc=[0.929,1.013,2.293] # list of Tc for experiments
         self.num1=nums[2]
         self.num2=nums[3]
         self.num_exp=nums[1]
         self.fork=nums[0]
-        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
-        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
+        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -27,6 +31,7 @@ class timetotemp:
         else:
             self.time,self.Q,self.T=self.import_fun(self.path2)
         self.t_fit=self.temp_fit()
+        self.QtoTF1()
      
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
@@ -40,15 +45,11 @@ class timetotemp:
             #num_exp=10 # number of point around pulse to remove
             data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
             a=np.where(abs(data[2])>1500)[0] # pulse removal
-            
             b=[]
             for i in a:
                 for j in range(-self.num_exp,self.num_exp):
                     b.append(i+j)
-            
-#           
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
-            
             t1=[]
             f1=[]
             q1=[]
@@ -67,7 +68,8 @@ class timetotemp:
         Q=Q[self.num1:self.num2]
         T=T[self.num1:self.num2]
         time=time-time[0] 
-        return time,Q,T        
+        return time,Q,T   
+     
     def temp_fit(self):
         '''linear regression fit of temperature data, removing nan first'''
         t1=[]
@@ -79,7 +81,6 @@ class timetotemp:
         for ii in range(len(self.T)):
             if num_del < len(na):
                 if ii == int(na[num_del]): 
-                    
                     num_del+=1
                 else:
                     t1.append(self.time[ii])
@@ -87,7 +88,7 @@ class timetotemp:
                     if ii < 0.6*len(self.T):
                         w.append(1)
                     else:
-                        w.append(10)
+                        w.append(2)
             else:
                 t1.append(self.time[ii])
                 temp1.append(self.T[ii])
@@ -97,18 +98,31 @@ class timetotemp:
                     w.append(2)
         
         fit = np.polyfit(t1,temp1,1,w=w)
+        
         fit_fn = np.poly1d(fit) 
-        fig1 = plt.figure(3, clear = True)
+        dt=self.tc[0]-fit_fn(t1[-1]) #correction to tc
+        fit[1]+=dt
+        return fit_fn
+    
+    def QtoTF1(self):
+        '''Transformation of Q into Temperature based on Fork1'''
+        #filt=ss.medfilt(A.Q,151) #filtering
+        filt1=ss.savgol_filter(A.Q,111,7)
+        filt=ss.medfilt(filt1,151) #filtering
+        fit = np.polyfit(A.time,filt,6)
+        fit_fn = np.poly1d(fit)
+        
+        fig1 = plt.figure(5, clear = True)
         ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('T')
-        ax1.set_xlabel('time')
-        ax1.set_title('T vs time')
-        ax1.scatter(t1, temp1, color='blue',s=0.5) 
-        ax1.plot(t1,fit_fn(t1), color = 'red', lw=2)
+        ax1.set_ylabel('Q')
+        ax1.set_xlabel('Time')
+        ax1.set_title('Q vs TTime')
+        ax1.scatter(A.time, A.Q, color='blue',s=0.5)
+        ax1.plot(A.time, filt,color='red',lw=1)
+        ax1.plot(A.time,fit_fn(A.time),color='green',lw=2)
         plt.grid()
-        plt.show()
-        return fit
-                
+        plt.show()        
+        
     def plotting(self,*args):
         '''simplfied, i hope, func for plotting'''
         # 0 - number of fig; 1 - X; 2 - Y; 3 - label X; 4 - label Y
@@ -140,27 +154,27 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-A=timetotemp(1,10,8885,47000) 
-A.plotting(1,3,1,'time','Q')
-A.plotting(2,0,2,'time','T')
+A=timetotemp(1,10,9000,47000) 
+#A.plotting(1,3,1,'time','Q')
+#A.plotting(2,0,2,'time','T')
 
 #a=np.argwhere([A.T,np.isnan(A.T)])
 #print(a)
 #idx = np.isfinite(A.time) & np.isfinite(A.T)
 ##ab = np.polyfit(x[idx], y[idx], 1)
 #fit = np.polyfit(A.time[idx],A.T[idx],1)
-fit_fn = np.poly1d(A.t_fit) 
-#
+#fit_fn = np.poly1d(A.t_fit) 
+print(A.t_fit(A.time[-1]))
 ##plt.plot(x,y, 'yo', x, fit_fn(x), '--k')
 ##time,Q,T=import_fun(path2)
 ## plotting
 fig1 = plt.figure(4, clear = True)
 ax1 = fig1.add_subplot(111)
 ax1.set_ylabel('Q')
-ax1.set_xlabel('time')
-ax1.set_title('Q vs time')
+ax1.set_xlabel('Temperature')
+ax1.set_title('Q vs Temp')
 ax1.scatter(A.time, A.T, color='blue',s=0.5)
-ax1.plot(A.time, fit_fn(A.time),color='red',lw=2)
+ax1.plot(A.time, A.t_fit(A.time),color='red',lw=2)
 plt.grid()
 plt.show()
 
