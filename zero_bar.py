@@ -32,6 +32,7 @@ class timetotemp:
             self.time,self.Q,self.T=self.import_fun(self.path2)
         self.t_fit=self.temp_fit()
         self.QtoTF1()
+        self.time2,self.Q2,self.T2=self.import_fun(self.path2)
      
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
@@ -96,13 +97,11 @@ class timetotemp:
                     w.append(1)
                 else:
                     w.append(2)
-        
         fit = np.polyfit(t1,temp1,1,w=w)
-        
         fit_fn = np.poly1d(fit) 
         dt=self.tc[0]-fit_fn(t1[-1]) #correction to tc
         fit[1]+=dt
-        return fit_fn
+        return fit
     
     def QtoTF1(self):
         '''Transformation of Q into Temperature based on Fork1'''
@@ -110,18 +109,21 @@ class timetotemp:
         filt1=ss.savgol_filter(A.Q,111,7)
         filt=ss.medfilt(filt1,151) #filtering
         fit = np.polyfit(A.time,filt,6)
-        fit_fn = np.poly1d(fit)
-        
+        fit_fn = np.poly1d(fit) # Q
+        Q=fit_fn(self.time)
+        tx=np.poly1d(self.t_fit)
+        T=tx(self.time)
+        fit_qt=np.polyfit(Q,T,14)
+        fit_revqt=np.poly1d(fit_qt)
         fig1 = plt.figure(5, clear = True)
         ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('Q')
-        ax1.set_xlabel('Time')
-        ax1.set_title('Q vs TTime')
-        ax1.scatter(A.time, A.Q, color='blue',s=0.5)
-        ax1.plot(A.time, filt,color='red',lw=1)
-        ax1.plot(A.time,fit_fn(A.time),color='green',lw=2)
+        ax1.set_ylabel('T')
+        ax1.set_xlabel('Q')
+        ax1.set_title('T vs Q')
+        ax1.scatter(self.time, fit_revqt(Q), color='blue',s=2)
         plt.grid()
-        plt.show()        
+        plt.show() 
+        return fit_qt
         
     def plotting(self,*args):
         '''simplfied, i hope, func for plotting'''
@@ -158,15 +160,8 @@ A=timetotemp(1,10,9000,47000)
 #A.plotting(1,3,1,'time','Q')
 #A.plotting(2,0,2,'time','T')
 
-#a=np.argwhere([A.T,np.isnan(A.T)])
-#print(a)
-#idx = np.isfinite(A.time) & np.isfinite(A.T)
-##ab = np.polyfit(x[idx], y[idx], 1)
-#fit = np.polyfit(A.time[idx],A.T[idx],1)
-#fit_fn = np.poly1d(A.t_fit) 
-print(A.t_fit(A.time[-1]))
-##plt.plot(x,y, 'yo', x, fit_fn(x), '--k')
-##time,Q,T=import_fun(path2)
+Q_f=np.poly1d(A.t_fit)
+print(Q_f(A.time[-1]))
 ## plotting
 fig1 = plt.figure(4, clear = True)
 ax1 = fig1.add_subplot(111)
@@ -174,24 +169,16 @@ ax1.set_ylabel('Q')
 ax1.set_xlabel('Temperature')
 ax1.set_title('Q vs Temp')
 ax1.scatter(A.time, A.T, color='blue',s=0.5)
-ax1.plot(A.time, A.t_fit(A.time),color='red',lw=2)
+ax1.plot(A.time, Q_f(A.time),color='red',lw=2)
 plt.grid()
 plt.show()
 
-#ind1=range(np.shape(A.time)[0])
-## plotting
-#fig1 = plt.figure(1, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
-#ax1.set_xlabel('time')
-#ax1.set_title('Q vs time')
-#line = ax1.plot(ind1, A.Q, color='blue', lw=1)
-#plt.show()
-#
-#fig2 = plt.figure(2, clear = True)
-#ax2 = fig2.add_subplot(111)
-#ax2.set_ylabel('T')
-#ax2.set_xlabel('time')
-#ax2.set_title('Q vs temperature')
-#scatter = ax2.scatter(A.time, A.T, color='blue')
-#plt.show()
+fig1 = plt.figure(1, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('Temperature')
+ax1.set_title('Q vs Temp')
+#ax1.scatter(A.time, A.T, color='blue',s=0.5)
+ax1.plot(A.time2, A.Q2,color='red',lw=2)
+plt.grid()
+plt.show()
