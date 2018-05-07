@@ -15,24 +15,28 @@ class timetotemp:
     Tc(9psi) = 1.013 mK'''
     def __init__(self,*nums):
         self.tc=[0.929,1.013,2.293] # list of Tc for experiments
-        self.num1=nums[2]
-        self.num2=nums[3]
-        self.num_exp=nums[1]
-        self.fork=nums[0]
-        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
-        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        self.num_exp=nums[0]
+        self.num1=nums[1]
+        self.num2=nums[2]
+        self.offset=nums[3]
+        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
+        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
-        self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"]  
-        
-        if self.fork==1:
-            self.time,self.Q,self.T=self.import_fun(self.path1)
-        else:
-            self.time,self.Q,self.T=self.import_fun(self.path2)
-        self.t_fit=self.temp_fit()
-        self.QtoTF1()
-        self.time2,self.Q2,self.T2=self.import_fun(self.path2)
+        self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"] 
+        self.dtime=[]
+        self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
+        self.t_fit=self.temp_fit() # linear fir of T vs times. remove nan
+        self.TQ=self.QtoTF1() # convert Q into T
+        self.time2,self.Q2,self.T2=self.import_fun(self.path2) # import fork 2
+        self.time2=self.time2[0:len(self.time2)-self.offset] # cut temperature offset to SF state
+        self.Q2=self.Q2[0:len(self.Q2)-self.offset]
+        self.T2=self.T2[0:len(self.T2)-self.offset]
+        self.TQ2=self.TQ
+        tf=np.poly1d(self.TQ2)
+        dt2=self.tc[0]-tf(self.Q2[-1])
+        self.TQ2[-1]+=dt2
      
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
@@ -61,14 +65,18 @@ class timetotemp:
                     f1.append(data[1][k])
                     q1.append(data[2][k])
                     temp1.append(data[3][k])
-            time=time+t1
-            F=F+f1
-            Q=Q+q1
-            T=T+temp1
+            time += t1
+            F += f1
+            Q += q1
+            T += temp1
         time=time[self.num1:self.num2]
         Q=Q[self.num1:self.num2]
         T=T[self.num1:self.num2]
-        time=time-time[0] 
+        if not self.dtime:
+            self.dtime.append(time[0])
+            time -= time[0]
+        else:
+            time -= self.dtime[0]
         return time,Q,T   
      
     def temp_fit(self):
@@ -106,23 +114,23 @@ class timetotemp:
     def QtoTF1(self):
         '''Transformation of Q into Temperature based on Fork1'''
         #filt=ss.medfilt(A.Q,151) #filtering
-        filt1=ss.savgol_filter(A.Q,111,7)
+        filt1=ss.savgol_filter(self.Q,111,7)
         filt=ss.medfilt(filt1,151) #filtering
-        fit = np.polyfit(A.time,filt,6)
+        fit = np.polyfit(self.time,filt,6)
         fit_fn = np.poly1d(fit) # Q
         Q=fit_fn(self.time)
         tx=np.poly1d(self.t_fit)
         T=tx(self.time)
         fit_qt=np.polyfit(Q,T,14)
-        fit_revqt=np.poly1d(fit_qt)
-        fig1 = plt.figure(5, clear = True)
-        ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('T')
-        ax1.set_xlabel('Q')
-        ax1.set_title('T vs Q')
-        ax1.scatter(self.time, fit_revqt(Q), color='blue',s=2)
-        plt.grid()
-        plt.show() 
+#        fit_revqt=np.poly1d(fit_qt)
+#        fig1 = plt.figure(5, clear = True)
+#        ax1 = fig1.add_subplot(111)
+#        ax1.set_ylabel('T')
+#        ax1.set_xlabel('Q')
+#        ax1.set_title('T vs Q')
+#        ax1.scatter(self.time, fit_revqt(Q), color='blue',s=2)
+#        plt.grid()
+#        plt.show() 
         return fit_qt
         
     def plotting(self,*args):
@@ -156,29 +164,52 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-A=timetotemp(1,10,9000,47000) 
-#A.plotting(1,3,1,'time','Q')
-#A.plotting(2,0,2,'time','T')
-
+A=timetotemp(10,9000,47000,3200) 
 Q_f=np.poly1d(A.t_fit)
-print(Q_f(A.time[-1]))
+T_f=np.poly1d(A.TQ2)
+T_f1=np.poly1d(A.TQ)
+filt=ss.medfilt(T_f1(A.Q),11) #filtering
 ## plotting
 fig1 = plt.figure(4, clear = True)
 ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('Temperature')
-ax1.set_title('Q vs Temp')
-ax1.scatter(A.time, A.T, color='blue',s=0.5)
-ax1.plot(A.time, Q_f(A.time),color='red',lw=2)
+ax1.set_ylabel('Temperature')
+ax1.set_xlabel('time')
+ax1.set_title('Temp vs time for Fork 1')
+ax1.scatter(A.time, T_f1(A.Q), color='blue',s=0.5)
+ax1.plot(A.time, filt,color='red',lw=2)
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(2, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('T')
+ax1.set_xlabel('time')
+ax1.set_title('T vs time for fork2')
+#ax1.scatter(A.time, A.T, color='blue',s=0.5)
+ax1.plot(A.time2, T_f(A.Q2),color='red',lw=2)
 plt.grid()
 plt.show()
 
 fig1 = plt.figure(1, clear = True)
 ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('Temperature')
-ax1.set_title('Q vs Temp')
+ax1.set_ylabel('Temperature')
+ax1.set_xlabel('time')
+ax1.set_title('Temperature vs time for both forks')
 #ax1.scatter(A.time, A.T, color='blue',s=0.5)
-ax1.plot(A.time2, A.Q2,color='red',lw=2)
+f2=ax1.plot(A.time, filt,color='blue',lw=1 )
+f1=ax1.plot(A.time2, T_f(A.Q2),color='red',lw=1)
+ax1.legend(['Fork 2', 'Fork1'])
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(3, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('T/T_c')
+ax1.set_xlabel('time')
+ax1.set_title('Reduced Temperature vs time for both forks')
+#ax1.scatter(A.time, A.T, color='blue',s=0.5)
+f2=ax1.plot(A.time, filt/A.tc[0],color='blue',lw=1 )
+f1=ax1.plot(A.time2, T_f(A.Q2)/A.tc[0],color='red',lw=1)
+ax1.legend(['Fork 2', 'Fork1'])
 plt.grid()
 plt.show()
