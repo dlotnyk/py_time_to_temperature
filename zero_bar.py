@@ -15,16 +15,21 @@ class timetotemp:
     Tc(9psi) = 1.013 mK'''
     def __init__(self,*nums):
         self.tc=[0.929,1.013,2.293] # list of Tc for experiments
-        self.num_exp=nums[0]
-        self.num1=nums[1]
-        self.num2=nums[2]
-        self.offset=nums[3]
+        self.set=nums[0]
+        self.num_exp=nums[1]
+        self.num1=nums[2]
+        self.num2=nums[3]
+        self.offset=nums[4]
         #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir
         self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
-        self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"] 
+        self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"]
+        self.calibration()
+        
+    def calibration(self):
+        '''The sequence of commands to calibrate temperature according to Q's'''
         self.dtime=[]
         self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
         self.t_fit=self.temp_fit() # linear fir of T vs times. remove nan
@@ -37,7 +42,7 @@ class timetotemp:
         tf=np.poly1d(self.TQ2)
         dt2=self.tc[0]-tf(self.Q2[-1])
         self.TQ2[-1]+=dt2
-     
+        
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
         time=[]
@@ -107,7 +112,7 @@ class timetotemp:
                     w.append(2)
         fit = np.polyfit(t1,temp1,1,w=w)
         fit_fn = np.poly1d(fit) 
-        dt=self.tc[0]-fit_fn(t1[-1]) #correction to tc
+        dt=self.tc[self.set]-fit_fn(t1[-1]) #correction to tc
         fit[1]+=dt
         return fit
     
@@ -164,7 +169,7 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-A=timetotemp(10,9000,47000,3200) 
+A=timetotemp(0,10,9000,47000,3200) 
 Q_f=np.poly1d(A.t_fit)
 T_f=np.poly1d(A.TQ2)
 T_f1=np.poly1d(A.TQ)
@@ -196,9 +201,9 @@ ax1.set_ylabel('Temperature')
 ax1.set_xlabel('time')
 ax1.set_title('Temperature vs time for both forks')
 #ax1.scatter(A.time, A.T, color='blue',s=0.5)
-f2=ax1.plot(A.time, filt,color='blue',lw=1 )
+f2=ax1.plot(A.time, filt,color='blue',lw=1)
 f1=ax1.plot(A.time2, T_f(A.Q2),color='red',lw=1)
-ax1.legend(['Fork 2', 'Fork1'])
+ax1.legend(['Fork 1', 'Fork 2'])
 plt.grid()
 plt.show()
 
@@ -208,8 +213,8 @@ ax1.set_ylabel('T/T_c')
 ax1.set_xlabel('time')
 ax1.set_title('Reduced Temperature vs time for both forks')
 #ax1.scatter(A.time, A.T, color='blue',s=0.5)
-f2=ax1.plot(A.time, filt/A.tc[0],color='blue',lw=1 )
-f1=ax1.plot(A.time2, T_f(A.Q2)/A.tc[0],color='red',lw=1)
-ax1.legend(['Fork 2', 'Fork1'])
+f2=ax1.plot(A.time, filt/A.tc[A.set],color='blue',lw=1)
+f1=ax1.plot(A.time2, T_f(A.Q2)/A.tc[A.set],color='red',lw=1)
+ax1.legend(['Fork 1', 'Fork 2'])
 plt.grid()
 plt.show()
