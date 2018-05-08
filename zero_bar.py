@@ -42,6 +42,7 @@ class timetotemp:
         tf=np.poly1d(self.TQ2)
         dt2=self.tc[0]-tf(self.Q2[-1])
         self.TQ2[-1]+=dt2
+        self.timeT2=self.QtoTF2(self)
         
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
@@ -57,7 +58,7 @@ class timetotemp:
             a=np.where(abs(data[2])>1500)[0] # pulse removal
             b=[]
             for i in a:
-                for j in range(-self.num_exp,self.num_exp):
+                for j in range(-int(self.num_exp),int(3*self.num_exp)):
                     b.append(i+j)
             d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
             t1=[]
@@ -137,6 +138,14 @@ class timetotemp:
 #        plt.grid()
 #        plt.show() 
         return fit_qt
+    
+    def QtoTF2(self):
+        '''Transformation of time into real temperature of Fork 2'''
+        T_f=np.poly1d(self.TQ2)
+        filt1=ss.savgol_filter(T_f(self.Q2),63,5)
+        filt2=ss.medfilt(filt1,61) #filtering
+        fit=np.polyfit(self.time2,filt2,8)
+        return fit
         
     def plotting(self,*args):
         '''simplfied, i hope, func for plotting'''
@@ -169,19 +178,24 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-A=timetotemp(0,10,9000,47000,3200) 
+A=timetotemp(0,20,9000,47000,6700) 
 Q_f=np.poly1d(A.t_fit)
 T_f=np.poly1d(A.TQ2)
 T_f1=np.poly1d(A.TQ)
 filt=ss.medfilt(T_f1(A.Q),11) #filtering
+
+filt1=ss.savgol_filter(T_f(A.Q2),63,5)
+filt2=ss.medfilt(filt1,61) #filtering
+fit2=np.polyfit(A.time2,filt2,8)
+fit2_fn=np.poly1d(fit2)
 ## plotting
 fig1 = plt.figure(4, clear = True)
 ax1 = fig1.add_subplot(111)
 ax1.set_ylabel('Temperature')
 ax1.set_xlabel('time')
-ax1.set_title('Temp vs time for Fork 1')
-ax1.scatter(A.time, T_f1(A.Q), color='blue',s=0.5)
-ax1.plot(A.time, filt,color='red',lw=2)
+ax1.set_title('Temp vs time for Fork 2')
+ax1.scatter(A.time2, T_f(A.Q2), color='blue',s=0.5)
+ax1.plot(A.time2, fit2_fn(A.time2),color='red',lw=2)
 plt.grid()
 plt.show()
 
@@ -201,9 +215,10 @@ ax1.set_ylabel('Temperature')
 ax1.set_xlabel('time')
 ax1.set_title('Temperature vs time for both forks')
 #ax1.scatter(A.time, A.T, color='blue',s=0.5)
-f2=ax1.plot(A.time, filt,color='blue',lw=1)
-f1=ax1.plot(A.time2, T_f(A.Q2),color='red',lw=1)
-ax1.legend(['Fork 1', 'Fork 2'])
+f2=ax1.plot(A.time, filt, color='blue', lw=1)
+f1=ax1.plot(A.time2, T_f(A.Q2), color='red', lw=1)
+#f3=ax1.plot(A.time2, filt2, color='green', lw=1)
+ax1.legend(['filt','Fork 1', 'Fork 2'])
 plt.grid()
 plt.show()
 
