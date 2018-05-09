@@ -7,6 +7,8 @@ Created on Wed May  2 12:09:15 2018
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as ss
+import sys
+import time as e_t
 
 class timetotemp:
     '''obtain T1(Q1) for F1; using this obtain T2(Q1) for F2
@@ -46,6 +48,7 @@ class timetotemp:
         
     def import_fun(self,path):
         '''import data from .dat files and concentrate matricies'''
+        start_time=e_t.time()
         time=[]
         F=[]
         Q=[]
@@ -83,10 +86,12 @@ class timetotemp:
             time -= time[0]
         else:
             time -= self.dtime[0]
+        print("import_fun time: {}".format(e_t.time()-start_time))
         return time,Q,T   
      
     def temp_fit(self):
         '''linear regression fit of temperature data, removing nan first'''
+        start_time=e_t.time()
         t1=[]
         temp1=[]
         w=[]
@@ -136,11 +141,13 @@ class timetotemp:
 #        ax1.plot(temp2, timeRev(temp2), color='blue',lw=1)
 #        plt.grid()
 #        plt.show()
+        print("temp_fit time: {}".format(e_t.time()-start_time))
         return fit,fit_rev
     
     def QtoTF1(self):
         '''Transformation of Q into Temperature based on Fork1'''
         #filt=ss.medfilt(A.Q,151) #filtering
+        start_time=e_t.time()
         filt1=ss.savgol_filter(self.Q,111,7)
         filt=ss.medfilt(filt1,151) #filtering
         fit = np.polyfit(self.time,filt,6)
@@ -158,18 +165,22 @@ class timetotemp:
 #        ax1.scatter(self.time, fit_revqt(Q), color='blue',s=2)
 #        plt.grid()
 #        plt.show() 
+        print("QtoTF1 time: {}".format(e_t.time()-start_time))
         return fit_qt
     
     def QtoTF2(self):
         '''Transformation of time into real temperature of Fork 2'''
+        start_time=e_t.time()
         T_f=np.poly1d(self.TQ2)
         filt1=ss.savgol_filter(T_f(self.Q2),63,5)
         filt2=ss.medfilt(filt1,61) #filtering
         fit=np.polyfit(self.time2,filt2,8)
+        print("QtoTF2: {}".format(e_t.time()-start_time))
         return fit
     
     def savetofile(self):
         '''Write a pulses Temp(time) of true temperature into two .dat files'''
+        start_time=e_t.time()
         path1=self.dir+"Fork1.dat"
         tf1=np.poly1d(self.TQ)
         filt=ss.medfilt(tf1(self.Q),11) #filtering fork 1
@@ -195,8 +206,11 @@ class timetotemp:
             for j in range(len(self.time2)):
                 file2.write("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
             #file.write('whatever')
+        print("savetofile time: {}".format(e_t.time()-start_time))
+        
     def importtaus(self):
         '''import data file with taus vs old temperature and convert into a real temperature'''
+        start_time=e_t.time()
         path=self.dir+"bar0tau.dat"
         path1=self.dir+"bar0tau_new.dat"
         data=np.genfromtxt(path, unpack=True, skip_header=3)
@@ -208,7 +222,7 @@ class timetotemp:
             file1.write("{0}\t{1}\t{2}\n".format('Temp,mK','tau, sec','T/Tc'))
             for i in range(len(data[0])):
                 file1.write("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]))
-        fig1 = plt.figure(1, clear = True)
+        fig1 = plt.figure(2, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('tau [sec]')
         ax1.set_xlabel('temperature [mK]')
@@ -218,6 +232,7 @@ class timetotemp:
         #ax1.plot(data[0], data[1],color='blue',lw=1)
         plt.grid()
         plt.show()
+        print("importtaus time: {}".format(e_t.time()-start_time))
         
     def plotting(self,*args):
         '''simplfied, i hope, func for plotting'''
@@ -251,9 +266,11 @@ class timetotemp:
 
 # main program statrs here
 A=timetotemp(0,20,9000,47000,6700) 
-#A=timetotemp(0,10,9000,47000,4200) 
-#A.savetofile()
 A.importtaus()
+del A
+A=timetotemp(0,10,9000,47000,4200) 
+A.savetofile()
+print(sys.getsizeof(A))
 del A
 #Q_f=np.poly1d(A.t_fit)
 #T_f=np.poly1d(A.TQ2)
