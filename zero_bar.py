@@ -58,6 +58,7 @@ class timetotemp:
         for p in path:
             #num_exp=10 # number of point around pulse to remove
             data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
+            
             a=np.where(abs(data[2])>1500)[0] # pulse removal
             b=[]
             for i in a:
@@ -172,7 +173,8 @@ class timetotemp:
         '''Transformation of time into real temperature of Fork 2'''
         start_time=e_t.time()
         T_f=np.poly1d(self.TQ2)
-        filt1=ss.savgol_filter(T_f(self.Q2),63,5)
+        tfq=T_f(self.Q2)
+        filt1=ss.savgol_filter(tfq,63,5)
         filt2=ss.medfilt(filt1,61) #filtering
         fit=np.polyfit(self.time2,filt2,8)
         print("QtoTF2: {}".format(e_t.time()-start_time))
@@ -183,19 +185,22 @@ class timetotemp:
         start_time=e_t.time()
         path1=self.dir+"Fork1n.dat"
         tf1=np.poly1d(self.TQ)
-        filt=ss.medfilt(tf1(self.Q),11) #filtering fork 1
+        filt=ss.medfilt(tf1(self.Q),11) #filtering fork 1        
         path2=self.dir+"Fork2n.dat"
         tf2=np.poly1d(self.TQ2)
-#        str1=[]
-#        for i in range(len(self.time)):
-#            str1.append("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
-#        with open(path1,'w') as file1:
-#            file1.write(str(str1))
-#        str2=[]
-#        for j in range(len(self.time2)):
-#            str2.append("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
-#        with open(path2,'w') as file2:
-#            file2.write(str(str2))
+        temp2=tf2(self.Q2)
+        list1=[]
+        for i in range(len(self.time)):
+            list1.append("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
+        str1 = ''.join(list1)
+        with open(path1,'w') as file1:
+            file1.write(str1)
+        list2=[]
+        for j in range(len(self.time2)):
+            list2.append("{0}\t{1}\t{2}\n".format(self.time2[j],temp2[j],temp2[j]/self.tc[self.set]))
+        str2 = ''.join(list2)
+        with open(path2,'w') as file2:
+            file2.write(str2)
         fig1 = plt.figure(1, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('T/Tc')
@@ -207,11 +212,11 @@ class timetotemp:
         plt.grid()
         plt.show()
         #open("bla.txt", "wb").write(''.join(random.choice(string.ascii_lowercase) for i in xrange(10**7)))
-        open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]) for i in range(len(self.time))))
+        #open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]) for i in range(len(self.time))))
 #            file1.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
 #            for i in range(len(self.time)):
 #                file1.write("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
-        open(path2, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]) for j in range(len(self.time2))))
+        #open(path2, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]) for j in range(len(self.time2))))
 #            file2.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
 #            for j in range(len(self.time2)):
 #                file2.write("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
