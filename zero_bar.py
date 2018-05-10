@@ -181,12 +181,21 @@ class timetotemp:
     def savetofile(self):
         '''Write a pulses Temp(time) of true temperature into two .dat files'''
         start_time=e_t.time()
-        path1=self.dir+"Fork1.dat"
+        path1=self.dir+"Fork1n.dat"
         tf1=np.poly1d(self.TQ)
         filt=ss.medfilt(tf1(self.Q),11) #filtering fork 1
-        path2=self.dir+"Fork2.dat"
+        path2=self.dir+"Fork2n.dat"
         tf2=np.poly1d(self.TQ2)
-        
+#        str1=[]
+#        for i in range(len(self.time)):
+#            str1.append("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
+#        with open(path1,'w') as file1:
+#            file1.write(str(str1))
+#        str2=[]
+#        for j in range(len(self.time2)):
+#            str2.append("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
+#        with open(path2,'w') as file2:
+#            file2.write(str(str2))
         fig1 = plt.figure(1, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('T/Tc')
@@ -197,14 +206,15 @@ class timetotemp:
         ax1.plot(self.time2,tf2(self.Q2)/self.tc[self.set],color='green', lw=1)
         plt.grid()
         plt.show()
-        with open(path1, 'w') as file1:
-            file1.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
-            for i in range(len(self.time)):
-                file1.write("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
-        with open(path2, 'w') as file2:
-            file2.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
-            for j in range(len(self.time2)):
-                file2.write("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
+        #open("bla.txt", "wb").write(''.join(random.choice(string.ascii_lowercase) for i in xrange(10**7)))
+        open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]) for i in range(len(self.time))))
+#            file1.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
+#            for i in range(len(self.time)):
+#                file1.write("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
+        open(path2, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]) for j in range(len(self.time2))))
+#            file2.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
+#            for j in range(len(self.time2)):
+#                file2.write("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
             #file.write('whatever')
         print("savetofile time: {}".format(e_t.time()-start_time))
         
@@ -218,10 +228,10 @@ class timetotemp:
         newTime=Ttotime(data[0])
         TimetoT=np.poly1d(self.timeT2)
         newT=TimetoT(newTime)
-        with open(path1, 'w') as file1:
-            file1.write("{0}\t{1}\t{2}\n".format('Temp,mK','tau, sec','T/Tc'))
-            for i in range(len(data[0])):
-                file1.write("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]))
+        open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]) for i in range(len(data[0]))))
+#            file1.write("{0}\t{1}\t{2}\n".format('Temp,mK','tau, sec','T/Tc'))
+#            for i in range(len(data[0])):
+#                file1.write("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]))
         fig1 = plt.figure(2, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('tau [sec]')
@@ -270,7 +280,7 @@ A.importtaus()
 del A
 A=timetotemp(0,10,9000,47000,4200) 
 A.savetofile()
-print(sys.getsizeof(A))
+#print(sys.getsizeof(A))
 del A
 #Q_f=np.poly1d(A.t_fit)
 #T_f=np.poly1d(A.TQ2)
