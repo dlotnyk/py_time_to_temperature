@@ -7,7 +7,7 @@ Created on Wed May  2 12:09:15 2018
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as ss
-import sys
+#import sys
 import time as e_t
 
 class timetotemp:
@@ -22,8 +22,8 @@ class timetotemp:
         self.num1=nums[2]
         self.num2=nums[3]
         self.offset=nums[4]
-        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
+        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -211,16 +211,6 @@ class timetotemp:
         ax1.plot(self.time2,tf2(self.Q2)/self.tc[self.set],color='green', lw=1)
         plt.grid()
         plt.show()
-        #open("bla.txt", "wb").write(''.join(random.choice(string.ascii_lowercase) for i in xrange(10**7)))
-        #open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]) for i in range(len(self.time))))
-#            file1.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
-#            for i in range(len(self.time)):
-#                file1.write("{0}\t{1}\t{2}\n".format(self.time[i],filt[i],filt[i]/self.tc[self.set]))
-        #open(path2, 'w').write(''.join("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]) for j in range(len(self.time2))))
-#            file2.write("{0}\t{1}\t{2}\n".format('Time,sec','Temp,mK','T/Tc'))
-#            for j in range(len(self.time2)):
-#                file2.write("{0}\t{1}\t{2}\n".format(self.time2[j],tf2(self.Q2[j]),tf2(self.Q2[j])/self.tc[self.set]))
-            #file.write('whatever')
         print("savetofile time: {}".format(e_t.time()-start_time))
         
     def importtaus(self):
@@ -234,9 +224,6 @@ class timetotemp:
         TimetoT=np.poly1d(self.timeT2)
         newT=TimetoT(newTime)
         open(path1, 'w').write(''.join("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]) for i in range(len(data[0]))))
-#            file1.write("{0}\t{1}\t{2}\n".format('Temp,mK','tau, sec','T/Tc'))
-#            for i in range(len(data[0])):
-#                file1.write("{0}\t{1}\t{2}\n".format(newT[i],data[1][i],newT[i]/self.tc[self.set]))
         fig1 = plt.figure(2, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('tau [sec]')
