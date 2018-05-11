@@ -22,8 +22,8 @@ class timetotemp:
         self.num1=nums[2]
         self.num2=nums[3]
         self.offset=nums[4]
-        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
+        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -60,6 +60,7 @@ class timetotemp:
             data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
             
             a=np.where(abs(data[2])>1500)[0] # pulse removal
+            #print(np.shape(a))
             b=[]
             for i in a:
                 for j in range(-int(self.num_exp),int(3*self.num_exp)):
@@ -82,6 +83,7 @@ class timetotemp:
         time=time[self.num1:self.num2]
         Q=Q[self.num1:self.num2]
         T=T[self.num1:self.num2]
+        #print(np.shape(Q))
         if not self.dtime:
             self.dtime.append(time[0])
             time -= time[0]
@@ -124,14 +126,15 @@ class timetotemp:
         fit_fn = np.poly1d(fit)
         temp2=fit_fn(t1)
         fit_rev=np.polyfit(temp2,t1,1)
-#        timeRev=np.poly1d(fit_rev)
+        timeRev=np.poly1d(fit_rev)
         
-#        fig1 = plt.figure(2, clear = True)
+#        fig1 = plt.figure(8, clear = True)
 #        ax1 = fig1.add_subplot(111)
 #        ax1.set_ylabel('T')
 #        ax1.set_xlabel('time')
 #        ax1.set_title('T and time')
 #        ax1.plot(t1, temp2, color='blue',lw=1)
+#        ax1.scatter(self.time,self.T)
 #        plt.grid()
 #        plt.show()
 #        fig1 = plt.figure(3, clear = True)
@@ -158,7 +161,7 @@ class timetotemp:
         T=tx(self.time)
         fit_qt=np.polyfit(Q,T,14)
 #        fit_revqt=np.poly1d(fit_qt)
-#        fig1 = plt.figure(5, clear = True)
+#        fig1 = plt.figure(9, clear = True)
 #        ax1 = fig1.add_subplot(111)
 #        ax1.set_ylabel('T')
 #        ax1.set_xlabel('Q')
@@ -267,24 +270,26 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
+start_time1=e_t.time()
 A=timetotemp(0,20,9000,47000,6700) 
-A.importtaus()
+#A.importtaus()
 del A
-A=timetotemp(0,10,9000,47000,4200) 
-A.savetofile()
+#A=timetotemp(0,10,9000,47000,4200) 
+#A.savetofile()
 #print(sys.getsizeof(A))
-del A
+#del A
+print("Total time: {}".format(e_t.time()-start_time1))
 #Q_f=np.poly1d(A.t_fit)
 #T_f=np.poly1d(A.TQ2)
 #T_f1=np.poly1d(A.TQ)
 #filt=ss.medfilt(T_f1(A.Q),11) #filtering
-#
+##
 #filt1=ss.savgol_filter(T_f(A.Q2),63,5)
 #filt2=ss.medfilt(filt1,61) #filtering
 #fit2=np.polyfit(A.time2,filt2,8)
 #fit2_fn=np.poly1d(fit2)
-
-## plotting
+#
+### plotting
 #fig1 = plt.figure(4, clear = True)
 #ax1 = fig1.add_subplot(111)
 #ax1.set_ylabel('Temperature')
@@ -294,8 +299,8 @@ del A
 #ax1.plot(A.time2, fit2_fn(A.time2),color='red',lw=2)
 #plt.grid()
 #plt.show()
-#
-#fig1 = plt.figure(2, clear = True)
+##
+#fig1 = plt.figure(5, clear = True)
 #ax1 = fig1.add_subplot(111)
 #ax1.set_ylabel('T')
 #ax1.set_xlabel('time')
@@ -305,7 +310,7 @@ del A
 #plt.grid()
 #plt.show()
 #
-#fig1 = plt.figure(1, clear = True)
+#fig1 = plt.figure(6, clear = True)
 #ax1 = fig1.add_subplot(111)
 #ax1.set_ylabel('Temperature')
 #ax1.set_xlabel('time')
@@ -318,7 +323,7 @@ del A
 #plt.grid()
 #plt.show()
 #
-#fig1 = plt.figure(3, clear = True)
+#fig1 = plt.figure(7, clear = True)
 #ax1 = fig1.add_subplot(111)
 #ax1.set_ylabel('T/T_c')
 #ax1.set_xlabel('time')
