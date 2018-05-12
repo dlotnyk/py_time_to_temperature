@@ -22,8 +22,8 @@ class timetotemp:
         self.num1=nums[2]
         self.num2=nums[3]
         self.offset=nums[4]
-        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
+        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -33,64 +33,76 @@ class timetotemp:
     def calibration(self):
         '''The sequence of commands to calibrate temperature according to Q's'''
         self.dtime=[]
-        self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
-        self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
-        self.TQ=self.QtoTF1() # convert Q into T. Fork 1
-        self.time2,self.Q2,self.T2=self.import_fun(self.path2) # import fork 2
-        self.time2=self.time2[0:len(self.time2)-self.offset] # cut temperature offset to SF state
-        self.Q2=self.Q2[0:len(self.Q2)-self.offset]
-        self.T2=self.T2[0:len(self.T2)-self.offset]
-        self.TQ2=self.TQ
-        tf=np.poly1d(self.TQ2) # convert Q into T Fork 2
-        dt2=self.tc[0]-tf(self.Q2[-1])
-        self.TQ2[-1]+=dt2 # count an offset
-        self.timeT2=self.QtoTF2() # time to a new temperature for Fork 2
+        self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
+#        self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
+#        self.time2,self.Q2,self.T2=self.import_fun(self.path2) # import fork 2
+#        self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
+#        self.TQ=self.QtoTF1() # convert Q into T. Fork 1
+#        
+#        self.time2=self.time2[0:len(self.time2)-self.offset] # cut temperature offset to SF state
+#        self.Q2=self.Q2[0:len(self.Q2)-self.offset]
+#        self.T2=self.T2[0:len(self.T2)-self.offset]
+#        self.TQ2=self.TQ
+#        tf=np.poly1d(self.TQ2) # convert Q into T Fork 2
+#        dt2=self.tc[0]-tf(self.Q2[-1])
+#        self.TQ2[-1]+=dt2 # count an offset
+#        self.timeT2=self.QtoTF2() # time to a new temperature for Fork 2
         
-    def import_fun(self,path):
+    def import_fun(self,path,path1):
         '''import data from .dat files and concentrate matricies'''
         start_time=e_t.time()
-        time=[]
-        F=[]
-        Q=[]
-        T=[]
-        #self.num1=8885 # skip point from begin of files
-        #num2=43930 # skip all after
+        counter=0
         for p in path:
             #num_exp=10 # number of point around pulse to remove
-            data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 5, 6, 13, 7))
-            
-            a=np.where(abs(data[2])>1500)[0] # pulse removal
+            data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 6, 13))
+            if counter == 0:
+                data1=data.copy()
+                counter += 1
+            else:
+                data1=np.concatenate((data1,data),axis=1)
+        counter2=0
+        for p1 in path1:
+            dataF2=np.genfromtxt(p1, unpack=True, skip_header=1, usecols = (2, 6, 13))
+            if counter2 == 0:
+                data11=dataF2.copy()
+                counter2 += 1
+            else:
+                data11=np.concatenate((data11,dataF2),axis=1)
+#            a=np.where(abs(data[2])>1500)[0] # pulse removal
             #print(np.shape(a))
-            b=[]
-            for i in a:
-                for j in range(-int(self.num_exp),int(3*self.num_exp)):
-                    b.append(i+j)
-            d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
-            t1=[]
-            f1=[]
-            q1=[]
-            temp1=[]
-            for k in range(np.shape(data)[1]):
-                if d[k]==True:
-                    t1.append(data[0][k])                
-                    f1.append(data[1][k])
-                    q1.append(data[2][k])
-                    temp1.append(data[3][k])
-            time += t1
-            F += f1
-            Q += q1
-            T += temp1
-        time=time[self.num1:self.num2]
-        Q=Q[self.num1:self.num2]
-        T=T[self.num1:self.num2]
+#            b=[]
+#            for i in a:
+#                for j in range(-int(self.num_exp),int(3*self.num_exp)):
+#                    b.append(i+j)
+#            d=np.in1d(range(0,len(data[0])),b,assume_unique=True,invert = True)
+#            t1=[]
+#            f1=[]
+#             q1=[]
+#            temp1=[]
+#            for k in range(np.shape(data)[1]):
+#                if d[k]==True:
+#                    t1.append(data[0][k])                
+#                    f1.append(data[1][k])
+#                    q1.append(data[2][k])
+#                    temp1.append(data[3][k])
+#            time += data[0]
+##            F += f1
+#            Q += data[1]
+#            T += data[2]
+#        time=time[self.num1:self.num2]
+#        Q=Q[self.num1:self.num2]
+#        T=T[self.num1:self.num2]
         #print(np.shape(Q))
-        if not self.dtime:
-            self.dtime.append(time[0])
-            time -= time[0]
-        else:
-            time -= self.dtime[0]
+#        if not self.dtime:
+#            self.dtime.append(time[0])
+#            time -= time[0]
+#        else:
+#            time -= self.dtime[0]
+        #print(np.shape(data1))
+        data2=data1[0:,self.num1:self.num2]
+        data3=data11[0:,self.num1:self.num2-self.offset]
         print("import_fun time: {}".format(e_t.time()-start_time))
-        return time,Q,T   
+        return data2,data3   
      
     def temp_fit(self):
         '''linear regression fit of temperature data, removing nan first'''
@@ -126,7 +138,7 @@ class timetotemp:
         fit_fn = np.poly1d(fit)
         temp2=fit_fn(t1)
         fit_rev=np.polyfit(temp2,t1,1)
-        timeRev=np.poly1d(fit_rev)
+#        timeRev=np.poly1d(fit_rev)
         
 #        fig1 = plt.figure(8, clear = True)
 #        ax1 = fig1.add_subplot(111)
@@ -271,7 +283,25 @@ class timetotemp:
 
 # main program statrs here
 start_time1=e_t.time()
-A=timetotemp(0,20,9000,47000,6700) 
+A=timetotemp(0,20,9200,47000,1800)
+fig1 = plt.figure(3, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time')
+ax1.set_title('Q and time')
+ax1.plot(A.rawdata1[0], A.rawdata1[1], color='blue',lw=1)
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(4, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time')
+ax1.set_title('Q and time')
+ax1.plot(A.rawdata2[0], A.rawdata2[1], color='blue',lw=1)
+ax1.set_ylim(bottom=10, top=100)
+plt.grid()
+plt.show()  
 #A.importtaus()
 del A
 #A=timetotemp(0,10,9000,47000,4200) 
