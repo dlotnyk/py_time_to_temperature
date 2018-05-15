@@ -34,6 +34,7 @@ class timetotemp:
         '''The sequence of commands to calibrate temperature according to Q's'''
         self.dtime=[]
         self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
+        self.pulse=self.pulse_remove()
 #        self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
 #        self.time2,self.Q2,self.T2=self.import_fun(self.path2) # import fork 2
 #        self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
@@ -101,8 +102,31 @@ class timetotemp:
         #print(np.shape(data1))
         data2=data1[0:,self.num1:self.num2]
         data3=data11[0:,self.num1:self.num2-self.offset]
+        t0=data2[0][0]
+        data2[0]=data2[0]-t0
+        data3[0]=data3[0]-t0
         print("import_fun time: {}".format(e_t.time()-start_time))
-        return data2,data3   
+        return data2,data3 
+    
+    def pulse_remove(self):
+        '''Remove pulses from fork 2'''
+        start_time=e_t.time()
+        a=np.where(np.abs(self.rawdata2[1])>1500)
+        pulse=[]
+        pulse.append(a[0][0])
+        print(np.shape(a)[1])
+        ite=a[0][0]
+        for x in range(1,np.shape(a)[1]):
+            if (a[0][x] > ite+100):
+                pulse.append(a[0][x])
+                ite=a[0][x]
+            else:
+                ite += 1
+        pul=np.asarray(pulse)
+        #d=np.in1d(range(0,len(self.rawdata2[1])),pulse)
+#        d=np.in1d(range(0,len(self.rawdata2[1])),b,assume_unique=True,invert = True)        
+        print("pulse_remove time: {}".format(e_t.time()-start_time))
+        return pul
      
     def temp_fit(self):
         '''linear regression fit of temperature data, removing nan first'''
@@ -298,8 +322,9 @@ ax1 = fig1.add_subplot(111)
 ax1.set_ylabel('Q')
 ax1.set_xlabel('time')
 ax1.set_title('Q and time')
-ax1.plot(A.rawdata2[0], A.rawdata2[1], color='blue',lw=1)
-ax1.set_ylim(bottom=10, top=100)
+#ax1.plot(A.rawdata2[0], A.rawdata2[1], color='blue',lw=1)
+ax1.scatter(A.rawdata2[0][A.pulse],A.rawdata2[1][A.pulse],color='red')
+#ax1.set_ylim(bottom=10, top=100)
 plt.grid()
 plt.show()  
 #A.importtaus()
