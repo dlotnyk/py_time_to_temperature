@@ -22,8 +22,8 @@ class timetotemp:
         self.num1=nums[2]
         self.num2=nums[3]
         self.offset=nums[4]
-        self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-        #self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+        #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
+        self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
         # Fork 1
         self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
         # Fork 2
@@ -34,21 +34,23 @@ class timetotemp:
         '''The sequence of commands to calibrate temperature according to Q's'''
         self.dtime=[]
         self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
-        self.pulse=self.pulse_remove()
+        self.pulseID=self.pulse_indicies() # find indicies of pulses
+        self.nopulse1,self.nopulse2=self.pulse_remove(20,5) # remove pulse and its surroundings
+        self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
+        self.TQ=self.QtoTF1() # convert Q into T. Fork 1
+        self.TQ2=self.TQ
+        tf=np.poly1d(self.TQ2) # convert Q into T Fork 2
+        Q2=self.rawdata2[1][self.nopulse2]
+        dt2=self.tc[0]-tf(Q2[-1])
+        self.TQ2[-1]+=dt2 # count an offset
+        self.timeT2=self.QtoTF2() # time to a new temperature for Fork 2
 #        self.time,self.Q,self.T=self.import_fun(self.path1) # import fork1
 #        self.time2,self.Q2,self.T2=self.import_fun(self.path2) # import fork 2
-#        self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
-#        self.TQ=self.QtoTF1() # convert Q into T. Fork 1
-#        
+#        self.t_fit,self.linTemp=self.temp_fit() # 
 #        self.time2=self.time2[0:len(self.time2)-self.offset] # cut temperature offset to SF state
 #        self.Q2=self.Q2[0:len(self.Q2)-self.offset]
 #        self.T2=self.T2[0:len(self.T2)-self.offset]
-#        self.TQ2=self.TQ
-#        tf=np.poly1d(self.TQ2) # convert Q into T Fork 2
-#        dt2=self.tc[0]-tf(self.Q2[-1])
-#        self.TQ2[-1]+=dt2 # count an offset
-#        self.timeT2=self.QtoTF2() # time to a new temperature for Fork 2
-        
+       
     def import_fun(self,path,path1):
         '''import data from .dat files and concentrate matricies'''
         start_time=e_t.time()
@@ -108,13 +110,12 @@ class timetotemp:
         print("import_fun time: {}".format(e_t.time()-start_time))
         return data2,data3 
     
-    def pulse_remove(self):
-        '''Remove pulses from fork 2'''
+    def pulse_indicies(self):
+        '''Find pulses in fork 2'''
         start_time=e_t.time()
         a=np.where(np.abs(self.rawdata2[1])>1500)
         pulse=[]
         pulse.append(a[0][0])
-        print(np.shape(a)[1])
         ite=a[0][0]
         for x in range(1,np.shape(a)[1]):
             if (a[0][x] > ite+100):
@@ -122,58 +123,74 @@ class timetotemp:
                 ite=a[0][x]
             else:
                 ite += 1
-        pul=np.asarray(pulse)
-        #d=np.in1d(range(0,len(self.rawdata2[1])),pulse)
-#        d=np.in1d(range(0,len(self.rawdata2[1])),b,assume_unique=True,invert = True)        
-        print("pulse_remove time: {}".format(e_t.time()-start_time))
+        pul=np.asarray(pulse)       
+        print("pulse_index time: {}".format(e_t.time()-start_time))
         return pul
+    
+    def pulse_remove(self,n1,n2):
+        '''Remove pulse and n-surroundings'''
+        start_time=e_t.time()
+        a=range(-n1,n1*n2)
+        s=[]
+        for p in np.nditer(self.pulseID):
+            for ad in np.nditer(a):
+                s.append(ad+p)
+        pulse_rem=np.asarray(s)
+        d1=np.in1d(range(0,len(self.rawdata1[1])),pulse_rem,assume_unique=True,invert = True)
+        d2=np.in1d(range(0,len(self.rawdata2[1])),pulse_rem,assume_unique=True,invert = True)
+        print("pulse_remove time: {}".format(e_t.time()-start_time))
+        return d1,d2
      
     def temp_fit(self):
         '''linear regression fit of temperature data, removing nan first'''
         start_time=e_t.time()
-        t1=[]
-        temp1=[]
-        w=[]
-        na=np.argwhere(np.isnan(self.T))
-        num_del=0
-        #print(len(self.T))
-        for ii in range(len(self.T)):
-            if num_del < len(na):
-                if ii == int(na[num_del]): 
-                    num_del+=1
-                else:
-                    t1.append(self.time[ii])
-                    temp1.append(self.T[ii])
-                    if ii < 0.6*len(self.T):
-                        w.append(1)
-                    else:
-                        w.append(2)
-            else:
-                t1.append(self.time[ii])
-                temp1.append(self.T[ii])
-                if ii < 0.6*len(self.T):
-                    w.append(1)
-                else:
-                    w.append(2)
-        fit = np.polyfit(t1,temp1,1,w=w)
+        na=np.where(np.isnan(self.rawdata1[2]))
+        d1=np.in1d(range(0,len(self.rawdata1[2])),na,invert = True)
+        w=np.ones(len(self.rawdata1[2]))
+        w[int(len(w)/2):]=5
+#        t1=[]
+#        temp1=[]
+#        w=[]
+#        na=np.argwhere(np.isnan(self.T))
+#        num_del=0
+#        #print(len(self.T))
+#        for ii in range(len(self.T)):
+#            if num_del < len(na):
+#                if ii == int(na[num_del]): 
+#                    num_del+=1
+#                else:
+#                    t1.append(self.time[ii])
+#                    temp1.append(self.T[ii])
+#                    if ii < 0.6*len(self.T):
+#                        w.append(1)
+#                    else:
+#                        w.append(2)
+#            else:
+#                t1.append(self.time[ii])
+#                temp1.append(self.T[ii])
+#                if ii < 0.6*len(self.T):
+#                    w.append(1)
+#                else:
+#                    w.append(2)
+        fit = np.polyfit(self.rawdata1[0][d1],self.rawdata1[2][d1],1,w=w[d1])
         fit_fn = np.poly1d(fit) 
-        dt=self.tc[self.set]-fit_fn(t1[-1]) #correction to tc
+        temp2=fit_fn(self.rawdata1[0][d1])
+        dt=self.tc[self.set]-temp2[-1] #correction to tc
         fit[1]+=dt
-        fit_fn = np.poly1d(fit)
-        temp2=fit_fn(t1)
-        fit_rev=np.polyfit(temp2,t1,1)
+        temp2=fit_fn(self.rawdata1[0][d1])
+        fit_rev=np.polyfit(temp2,self.rawdata1[0][d1],1)
 #        timeRev=np.poly1d(fit_rev)
-        
+#        
 #        fig1 = plt.figure(8, clear = True)
 #        ax1 = fig1.add_subplot(111)
 #        ax1.set_ylabel('T')
 #        ax1.set_xlabel('time')
 #        ax1.set_title('T and time')
-#        ax1.plot(t1, temp2, color='blue',lw=1)
-#        ax1.scatter(self.time,self.T)
+#        ax1.plot(self.rawdata1[0][d1], temp2, color='blue',lw=1)
+#        ax1.scatter(self.rawdata1[0][d1],self.rawdata1[2][d1])
 #        plt.grid()
 #        plt.show()
-#        fig1 = plt.figure(3, clear = True)
+#        fig1 = plt.figure(7, clear = True)
 #        ax1 = fig1.add_subplot(111)
 #        ax1.set_ylabel('time')
 #        ax1.set_xlabel('T')
@@ -188,21 +205,23 @@ class timetotemp:
         '''Transformation of Q into Temperature based on Fork1'''
         #filt=ss.medfilt(A.Q,151) #filtering
         start_time=e_t.time()
-        filt1=ss.savgol_filter(self.Q,111,7)
-        filt=ss.medfilt(filt1,151) #filtering
-        fit = np.polyfit(self.time,filt,6)
+#        filt1=ss.savgol_filter(self.Q,111,7)
+#        filt=ss.medfilt(filt1,151) #filtering
+        fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],6)
         fit_fn = np.poly1d(fit) # Q
-        Q=fit_fn(self.time)
+        Q=fit_fn(self.rawdata1[0][self.nopulse1])
         tx=np.poly1d(self.t_fit)
-        T=tx(self.time)
+        T=tx(self.rawdata1[0][self.nopulse1])
         fit_qt=np.polyfit(Q,T,14)
 #        fit_revqt=np.poly1d(fit_qt)
+#        
 #        fig1 = plt.figure(9, clear = True)
 #        ax1 = fig1.add_subplot(111)
 #        ax1.set_ylabel('T')
 #        ax1.set_xlabel('Q')
 #        ax1.set_title('T vs Q')
-#        ax1.scatter(self.time, fit_revqt(Q), color='blue',s=2)
+#        ax1.scatter(Q, T, color='blue',s=0.5)
+#        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
 #        plt.grid()
 #        plt.show() 
         print("QtoTF1 time: {}".format(e_t.time()-start_time))
@@ -212,10 +231,21 @@ class timetotemp:
         '''Transformation of time into real temperature of Fork 2'''
         start_time=e_t.time()
         T_f=np.poly1d(self.TQ2)
-        tfq=T_f(self.Q2)
-        filt1=ss.savgol_filter(tfq,63,5)
-        filt2=ss.medfilt(filt1,61) #filtering
-        fit=np.polyfit(self.time2,filt2,8)
+        tfq=T_f(self.rawdata2[1][self.nopulse2])
+#        filt1=ss.savgol_filter(tfq,63,5)
+#        filt2=ss.medfilt(filt1,61) #filtering
+        fit=np.polyfit(self.rawdata2[0][self.nopulse2],tfq,8)
+#        fit_f=np.poly1d(fit)
+#        
+#        fig1 = plt.figure(6, clear = True)
+#        ax1 = fig1.add_subplot(111)
+#        ax1.set_ylabel('T')
+#        ax1.set_xlabel('Q')
+#        ax1.set_title('T vs Q')
+#        ax1.scatter(self.rawdata2[1][self.nopulse2], tfq, color='blue',s=0.5)
+##        ax1.plot(self.rawdata2[1][self.nopulse2], fit_revqt(Q), color='red',lw=1)
+#        plt.grid()
+#        plt.show() 
         print("QtoTF2: {}".format(e_t.time()-start_time))
         return fit
     
@@ -308,24 +338,37 @@ class timetotemp:
 # main program statrs here
 start_time1=e_t.time()
 A=timetotemp(0,20,9200,47000,1800)
-fig1 = plt.figure(3, clear = True)
+f1,f2=A.pulse_remove(20,2)
+Ttime2=np.poly1d(A.timeT2)
+T2=Ttime2(A.rawdata2[0][f2])
+
+fig1 = plt.figure(1, clear = True)
 ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
+ax1.set_ylabel('T')
 ax1.set_xlabel('time')
-ax1.set_title('Q and time')
-ax1.plot(A.rawdata1[0], A.rawdata1[1], color='blue',lw=1)
+ax1.set_title('T and time')
+ax1.plot(A.rawdata2[0][f2], T2, color='blue',lw=1)
 plt.grid()
 plt.show()
 
-fig1 = plt.figure(4, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time')
-ax1.set_title('Q and time')
-#ax1.plot(A.rawdata2[0], A.rawdata2[1], color='blue',lw=1)
-ax1.scatter(A.rawdata2[0][A.pulse],A.rawdata2[1][A.pulse],color='red')
-#ax1.set_ylim(bottom=10, top=100)
-plt.grid()
+#fig1 = plt.figure(3, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time')
+#ax1.set_title('Q and time')
+#ax1.plot(A.rawdata1[0][A.nopulse1], A.rawdata1[1][A.nopulse1], color='blue',lw=1)
+#plt.grid()
+#plt.show()
+#
+#fig1 = plt.figure(4, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time')
+#ax1.set_title('Q and time')
+##ax1.plot(A.rawdata2[0], A.rawdata2[1], color='blue',lw=1)
+#ax1.scatter(A.rawdata2[0][A.nopulse2],A.rawdata2[1][A.nopulse2],color='red',s=0.5)
+##ax1.set_ylim(bottom=10, top=100)
+#plt.grid()
 plt.show()  
 #A.importtaus()
 del A
