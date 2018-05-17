@@ -198,6 +198,7 @@ class timetotemp:
         path2=self.dir+"Fork23n.dat"
         tf2=np.poly1d(self.TQ2)
         temp2=tf2(Q2)
+        list1=[]
         for i in range(len(time1)):
             list1.append("{0}\t{1}\t{2}\n".format(time1[i],filt[i],filt[i]/self.tc[self.set]))
         str1 = ''.join(list1)
