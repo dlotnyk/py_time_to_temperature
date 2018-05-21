@@ -36,7 +36,7 @@ class timetotemp:
             self.path1=[self.dir+"20171214\\CF0p6mK.dat",self.dir+"20171215\\CF1p0mK.dat",self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
             self.path2=[self.dir+"20171214\\FF0p6mK.dat",self.dir+"20171215\\FF1p0mK.dat",self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
-        #self.calibration()
+        self.calibration()
         self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
         
     def calibration(self):
@@ -60,7 +60,7 @@ class timetotemp:
         start_time=e_t.time()
         counter=0
         for p in path:
-            data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 6, 13))
+            data=np.genfromtxt(p, unpack=True, skip_header=1, usecols = (2, 6, 13, 7))
             if counter == 0:
                 data1=data.copy()
                 counter += 1
@@ -68,13 +68,13 @@ class timetotemp:
                 data1=np.concatenate((data1,data),axis=1)
         counter2=0
         for p1 in path1:
-            dataF2=np.genfromtxt(p1, unpack=True, skip_header=1, usecols = (2, 6, 13))
+            dataF2=np.genfromtxt(p1, unpack=True, skip_header=1, usecols = (2, 6, 13, 7))
             if counter2 == 0:
                 data11=dataF2.copy()
                 counter2 += 1
             else:
                 data11=np.concatenate((data11,dataF2),axis=1)
-        print(np.shape(data1))
+#        print(np.shape(data1))
         data2=data1[0:,self.num1:self.num2]
         data3=data11[0:,self.num1:self.num2-self.offset]
         
@@ -284,48 +284,59 @@ class timetotemp:
 
 # main program statrs here
 start_time1=e_t.time()
-B=timetotemp(2,10,1000,60000,100)
-fig1 = plt.figure(1, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('Q vs time for both forks')
-ax1.plot(B.rawdata1[0],B.rawdata1[1],color='green', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-plt.grid()
-plt.show()
-
-fig1 = plt.figure(2, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('Q vs time for both forks')
-ax1.plot(B.rawdata2[0],B.rawdata2[1],color='blue', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-plt.grid()
-plt.show()
-del B
-#A=timetotemp(0,20,9200,47000,1800)
-#f1,f2=A.pulse_remove(10,3)
-#A.savetofile()
-#A.importtaus()
-#tf=np.poly1d(A.TQ2)
-#tf1=np.poly1d(A.TQ)
-#
-#temp1=tf1(A.rawdata1[1][f1])
-#filt=ss.medfilt(temp1,11)
-#temp=tf(A.rawdata2[1][f2])
+#B=timetotemp(2,10,1000,60000,100)
 #fig1 = plt.figure(1, clear = True)
 #ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('T/Tc')
+#ax1.set_ylabel('Q')
 #ax1.set_xlabel('time [sec]')
-#ax1.set_title('T vs time for both forks')
-##ax1.scatter(A.time, A.T, color='blue',s=0.5)
-##ax1.plot(self.time, filt/self.tc[self.set],color='red',lw=1)
-#ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#ax1.set_title('Q vs time for both forks')
+#ax1.plot(B.rawdata1[0],B.rawdata1[1],color='green', lw=1)
+##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
 #plt.grid()
 #plt.show()
+#
+#fig1 = plt.figure(2, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time [sec]')
+#ax1.set_title('Q vs time for both forks')
+#ax1.plot(B.rawdata2[0],B.rawdata2[1],color='blue', lw=1)
+##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#plt.grid()
+#plt.show()
+#del B
+A=timetotemp(0,20,9200,47000,1800)
+f1,f2=A.pulse_remove(10,3)
+A.savetofile()
+A.importtaus()
+tf=np.poly1d(A.TQ2)
+tf1=np.poly1d(A.TQ)
 
-#del A
+temp1=tf1(A.rawdata1[1][f1])
+filt=ss.medfilt(temp1,11)
+temp=tf(A.rawdata2[1][f2])
+fig1 = plt.figure(1, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('T/Tc')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('T vs time for both forks')
+#ax1.scatter(A.time, A.T, color='blue',s=0.5)
+#ax1.plot(self.time, filt/self.tc[self.set],color='red',lw=1)
+ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
+ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(11, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('1/Q')
+ax1.set_xlabel('Df [sec]')
+ax1.set_title('1/Q vs df for both forks')
+#ax1.scatter(A.time, A.T, color='blue',s=0.5)
+#ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
+ax1.scatter(A.rawdata1[3][f1]-A.rawdata1[3][-1],1/A.rawdata1[1][f1],color='blue', s=0.5)
+plt.grid()
+plt.show()
+
+del A
 print("Total time: {}".format(e_t.time()-start_time1))
