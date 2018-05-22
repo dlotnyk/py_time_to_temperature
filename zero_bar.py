@@ -33,17 +33,18 @@ class timetotemp:
             #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
             self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
             # Fork 1
-            self.path1=[self.dir+"20171214\\CF0p6mK.dat",self.dir+"20171215\\CF1p0mK.dat",self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
+            self.path1=[self.dir+"20171226\\CF0p62mK.dat",self.dir+"20171227\\CF1p2mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
-            self.path2=[self.dir+"20171214\\FF0p6mK.dat",self.dir+"20171215\\FF1p0mK.dat",self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
-        self.calibration()
+            self.path2=[self.dir+"20171226\\FF0p62mK.dat",self.dir+"20171227\\FF1p2mK.dat"]#,self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
+#        self.calibration()
         self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
+        self.pulseID=self.pulse_indicies(1) # find indicies of pulses
         
     def calibration(self):
         '''The sequence of commands to calibrate temperature according to Q's'''
         
         self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
-        self.pulseID=self.pulse_indicies() # find indicies of pulses
+        self.pulseID=self.pulse_indicies(2) # find indicies of pulses
         self.nopulse1,self.nopulse2=self.pulse_remove(20,2) # remove pulse and its surroundings
         self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
         self.TQ=self.QtoTF1() # convert Q into T. Fork 1
@@ -74,7 +75,7 @@ class timetotemp:
                 counter2 += 1
             else:
                 data11=np.concatenate((data11,dataF2),axis=1)
-#        print(np.shape(data1))
+        print(np.shape(data1))
         data2=data1[0:,self.num1:self.num2]
         data3=data11[0:,self.num1:self.num2-self.offset]
         
@@ -84,10 +85,13 @@ class timetotemp:
         print("import_fun time: {}".format(e_t.time()-start_time))
         return data2,data3 
     
-    def pulse_indicies(self):
+    def pulse_indicies(self,f1):
         '''Find pulses in fork 2'''
         start_time=e_t.time()
-        a=np.where(np.abs(self.rawdata2[1])>1500)
+        if f1 is 1:
+            a=np.where(np.abs(self.rawdata1[1])>2000)
+        else:
+            a=np.where(np.abs(self.rawdata2[1])>1500)
         pulse=[]
         pulse.append(a[0][0])
         ite=a[0][0]
@@ -284,59 +288,60 @@ class timetotemp:
 
 # main program statrs here
 start_time1=e_t.time()
-#B=timetotemp(2,10,1000,60000,100)
+B=timetotemp(2,10,2000,30050,210)
+i1,i2=B.pulse_remove(10,5)
+fig1 = plt.figure(1, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('Q vs time for both forks')
+ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
+#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(2, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('Q vs time for both forks')
+ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
+#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+plt.grid()
+plt.show()
+del B
+#A=timetotemp(0,20,9200,47000,1800)
+#f1,f2=A.pulse_remove(10,3)
+#A.savetofile()
+#A.importtaus()
+#tf=np.poly1d(A.TQ2)
+#tf1=np.poly1d(A.TQ)
+#
+#temp1=tf1(A.rawdata1[1][f1])
+#filt=ss.medfilt(temp1,11)
+#temp=tf(A.rawdata2[1][f2])
 #fig1 = plt.figure(1, clear = True)
 #ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
+#ax1.set_ylabel('T/Tc')
 #ax1.set_xlabel('time [sec]')
-#ax1.set_title('Q vs time for both forks')
-#ax1.plot(B.rawdata1[0],B.rawdata1[1],color='green', lw=1)
-##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#ax1.set_title('T vs time for both forks')
+##ax1.scatter(A.time, A.T, color='blue',s=0.5)
+##ax1.plot(self.time, filt/self.tc[self.set],color='red',lw=1)
+#ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
+#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
 #plt.grid()
 #plt.show()
 #
-#fig1 = plt.figure(2, clear = True)
+#fig1 = plt.figure(11, clear = True)
 #ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
-#ax1.set_xlabel('time [sec]')
-#ax1.set_title('Q vs time for both forks')
-#ax1.plot(B.rawdata2[0],B.rawdata2[1],color='blue', lw=1)
-##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#ax1.set_ylabel('1/Q')
+#ax1.set_xlabel('Df [sec]')
+#ax1.set_title('1/Q vs df for both forks')
+##ax1.scatter(A.time, A.T, color='blue',s=0.5)
+##ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
+#ax1.scatter(A.rawdata1[3][f1]-A.rawdata1[3][-1],1/A.rawdata1[1][f1],color='blue', s=0.5)
 #plt.grid()
 #plt.show()
-#del B
-A=timetotemp(0,20,9200,47000,1800)
-f1,f2=A.pulse_remove(10,3)
-A.savetofile()
-A.importtaus()
-tf=np.poly1d(A.TQ2)
-tf1=np.poly1d(A.TQ)
-
-temp1=tf1(A.rawdata1[1][f1])
-filt=ss.medfilt(temp1,11)
-temp=tf(A.rawdata2[1][f2])
-fig1 = plt.figure(1, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('T/Tc')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('T vs time for both forks')
-#ax1.scatter(A.time, A.T, color='blue',s=0.5)
-#ax1.plot(self.time, filt/self.tc[self.set],color='red',lw=1)
-ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
-ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-plt.grid()
-plt.show()
-
-fig1 = plt.figure(11, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('1/Q')
-ax1.set_xlabel('Df [sec]')
-ax1.set_title('1/Q vs df for both forks')
-#ax1.scatter(A.time, A.T, color='blue',s=0.5)
-#ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
-ax1.scatter(A.rawdata1[3][f1]-A.rawdata1[3][-1],1/A.rawdata1[1][f1],color='blue', s=0.5)
-plt.grid()
-plt.show()
-
-del A
+#
+#del A
 print("Total time: {}".format(e_t.time()-start_time1))
