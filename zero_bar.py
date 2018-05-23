@@ -51,7 +51,7 @@ class timetotemp:
         TQ21=np.asarray(self.TQ)
         tf=np.poly1d(TQ21) # convert Q into T Fork 2
         Q21=self.rawdata2[1][self.nopulse2]
-        dt2=self.tc[0]-tf(Q21[-1])
+        dt2=self.tc[self.set]-tf(Q21[-1])
         TQ21[-1]+=dt2 # count an offset
         self.TQ2=tuple(TQ21)
         self.timeT2=self.QtoTF2() # time to a new temperature for Fork 2
@@ -230,6 +230,7 @@ class timetotemp:
         ax1.set_title('T vs time for both forks')
         ax1.plot(time1, filt/self.tc[self.set],color='red',lw=1)
         ax1.plot(time2,tf2(Q2)/self.tc[self.set],color='green', lw=1)
+        ax1.legend(['Fork 1','Fork 2'])
         plt.grid()
         plt.show()
         print("savetofile time: {}".format(e_t.time()-start_time))
@@ -288,27 +289,38 @@ class timetotemp:
 
 # main program statrs here
 start_time1=e_t.time()
-B=timetotemp(2,10,2000,30050,210)
-i1,i2=B.pulse_remove(10,5)
-fig1 = plt.figure(1, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('Q vs time for both forks')
-ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-plt.grid()
-plt.show()
+B=timetotemp(2,10,2000,30050,250)
+#i1,i2=B.pulse_remove(10,5)
+B.nopulse1,B.nopulse2=B.pulse_remove(20,2) # remove pulse and its surroundings
+B.t_fit,B.linTemp=B.temp_fit() # linear fit of T vs time Fork 1. remove nan
+B.TQ=B.QtoTF1() # convert Q into T. Fork 1
+TQ21=np.asarray(B.TQ)
+tf=np.poly1d(TQ21) # convert Q into T Fork 2
+Q21=B.rawdata2[1][B.nopulse2]
+dt2=B.tc[B.set]-tf(Q21[-1])
+TQ21[-1]+=dt2 # count an offset
+B.TQ2=tuple(TQ21)
+B.savetofile()
 
-fig1 = plt.figure(2, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('Q vs time for both forks')
-ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-plt.grid()
-plt.show()
+#fig1 = plt.figure(90, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time [sec]')
+#ax1.set_title('Q vs time for both forks')
+#ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
+##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#plt.grid()
+#plt.show()
+#
+#fig1 = plt.figure(91, clear = True)
+#ax1 = fig1.add_subplot(111)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time [sec]')
+#ax1.set_title('Q vs time for both forks')
+#ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
+##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+#plt.grid()
+#plt.show()
 del B
 #A=timetotemp(0,20,9200,47000,1800)
 #f1,f2=A.pulse_remove(10,3)
