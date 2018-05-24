@@ -10,6 +10,9 @@ import scipy.signal as ss
 #import sys
 import time as e_t
 
+import warnings
+warnings.simplefilter('ignore', np.RankWarning)
+
 class timetotemp:
     '''obtain T1(Q1) for F1; using this obtain T2(Q1) for F2
     Tc(0bar) = 0.929 mK
@@ -47,7 +50,7 @@ class timetotemp:
         self.pulseID=self.pulse_indicies(2) # find indicies of pulses
         self.nopulse1,self.nopulse2=self.pulse_remove(20,2) # remove pulse and its surroundings
         self.t_fit,self.linTemp=self.temp_fit() # linear fit of T vs time Fork 1. remove nan
-        self.TQ=self.QtoTF1() # convert Q into T. Fork 1
+        self.TQ=self.QtoTF1(13) # convert Q into T. Fork 1
         TQ21=np.asarray(self.TQ)
         tf=np.poly1d(TQ21) # convert Q into T Fork 2
         Q21=self.rawdata2[1][self.nopulse2]
@@ -147,32 +150,49 @@ class timetotemp:
         print("temp_fit time: {}".format(e_t.time()-start_time))
         return fit1,fit_rev1
     
-    def QtoTF1(self):
+    def QtoTF1(self,npol):
         '''Transformation of Q into Temperature based on Fork1'''
         start_time=e_t.time()
+        y=[]
+        for i in range(1,20):
+            fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],i)
+            fit_fn = np.poly1d(fit) # Q
+            y.append(np.sum((fit_fn(self.rawdata1[1][self.nopulse1])-self.rawdata1[1][self.nopulse1])**2))
         fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],6)
         fit_fn = np.poly1d(fit) # Q
         Q=fit_fn(self.rawdata1[0][self.nopulse1])
         w=np.ones(len(Q))
-        w[0:100]=5
-        w[-100:-1]=5
+        w[0:200]=5
+        w[-200:-1]=5
         tx=np.poly1d(self.t_fit)
         T=tx(self.rawdata1[0][self.nopulse1])
-        fit_qt=np.polyfit(Q,T,13,w=w)
-#        fit_revqt=np.poly1d(fit_qt)
-#        tm=fit_revqt(qm)
+        fit_qt=np.polyfit(Q,T,npol, w=w)
+#        print(fit_qt)
+        fit_revqt=np.poly1d(fit_qt)
+        print(np.sum((fit_revqt(Q) - T)**2)) #residue
+#        tm=fit_revqt(Q)
 #        dt=self.tc[self.set]-tm
 #        fit_qt[-1] += dt
-#        print(fit_revqt(Q[-1]))print("fit_qt=",fit_qt)
-#        fig1 = plt.figure(9, clear = True)
-#        ax1 = fig1.add_subplot(111)
-#        ax1.set_ylabel('T')
-#        ax1.set_xlabel('Q')
-#        ax1.set_title('T vs Q')
-#        ax1.scatter(Q, T, color='blue',s=0.5)
+        
+        fig1 = plt.figure(9, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('T')
+        ax1.set_xlabel('Q')
+        ax1.set_title('T vs Q')
+        ax1.scatter(Q, T, color='blue',s=0.5)
+        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
+        plt.grid()
+        plt.show() 
+        
+        fig1 = plt.figure(10, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('err')
+        ax1.set_xlabel('p_num')
+        ax1.set_title('error in polynomial')
+        ax1.scatter(range(1,20), y, color='blue',s=3)
 #        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
-#        plt.grid()
-#        plt.show() 
+        plt.grid()
+        plt.show() 
         fit_qt1=tuple(fit_qt)
         print("QtoTF1 time: {}".format(e_t.time()-start_time))
         return fit_qt1
@@ -228,7 +248,7 @@ class timetotemp:
         ax1.set_ylabel('T/Tc')
         ax1.set_xlabel('time [sec]')
         ax1.set_title('T vs time for both forks')
-        ax1.plot(time1, filt/self.tc[self.set],color='red',lw=1)
+        ax1.plot(time1, filt/self.tc[self.set],color='red',lw=1) #/self.tc[self.set]
         ax1.plot(time2,tf2(Q2)/self.tc[self.set],color='green', lw=1)
         ax1.legend(['Fork 1','Fork 2'])
         plt.grid()
@@ -293,9 +313,11 @@ B=timetotemp(2,10,2000,30050,250)
 #i1,i2=B.pulse_remove(10,5)
 B.nopulse1,B.nopulse2=B.pulse_remove(20,2) # remove pulse and its surroundings
 B.t_fit,B.linTemp=B.temp_fit() # linear fit of T vs time Fork 1. remove nan
-B.TQ=B.QtoTF1() # convert Q into T. Fork 1
+B.TQ=B.QtoTF1(25) # convert Q into T. Fork 1
+
 TQ21=np.asarray(B.TQ)
 tf=np.poly1d(TQ21) # convert Q into T Fork 2
+print(tf(B.rawdata2[1][-1]))
 Q21=B.rawdata2[1][B.nopulse2]
 dt2=B.tc[B.set]-tf(Q21[-1])
 TQ21[-1]+=dt2 # count an offset
