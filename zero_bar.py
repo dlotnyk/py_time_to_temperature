@@ -33,8 +33,8 @@ class timetotemp:
             # Fork 2
             self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"]
         elif self.set is 2: # 22 bar
-            #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
+            self.dir="d:\\therm_transport\\data\\22bar\\" # home dir 0 Bar
+#            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
             # Fork 1
             self.path1=[self.dir+"20171226\\CF0p62mK.dat",self.dir+"20171227\\CF1p2mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
@@ -150,15 +150,34 @@ class timetotemp:
         print("temp_fit time: {}".format(e_t.time()-start_time))
         return fit1,fit_rev1
     
-    def QtoTF1(self,npol):
+    def optim_poly(self,x,y,npol):
+        '''optimization for degree of polyfit'''
+        start_time=e_t.time()
+        w=np.ones(len(x))
+        w[0:200]=5
+        w[-200:-1]=5
+        y1=[]
+        for i in range(1,npol):
+            fit = np.polyfit(x,y,i,w=w)
+            fit_fn = np.poly1d(fit) # Q
+            y1.append(np.sum((fit_fn(x)-y)**2))
+            
+        fig1 = plt.figure(10, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('err')
+        ax1.set_xlabel('p_num')
+        ax1.set_title('error in polynomial')
+        ax1.scatter(range(1,npol), y1, color='blue',s=3)
+#        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
+        plt.grid()
+        plt.show() 
+        print("Opti poly: {}".format(e_t.time()-start_time))
+    
+    def QtoTF1(self,npol1,npol2):
         '''Transformation of Q into Temperature based on Fork1'''
         start_time=e_t.time()
-        y=[]
-        for i in range(1,20):
-            fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],i)
-            fit_fn = np.poly1d(fit) # Q
-            y.append(np.sum((fit_fn(self.rawdata1[1][self.nopulse1])-self.rawdata1[1][self.nopulse1])**2))
-        fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],6)
+        
+        fit = np.polyfit(self.rawdata1[0][self.nopulse1],self.rawdata1[1][self.nopulse1],npol1)
         fit_fn = np.poly1d(fit) # Q
         Q=fit_fn(self.rawdata1[0][self.nopulse1])
         w=np.ones(len(Q))
@@ -166,7 +185,7 @@ class timetotemp:
         w[-200:-1]=5
         tx=np.poly1d(self.t_fit)
         T=tx(self.rawdata1[0][self.nopulse1])
-        fit_qt=np.polyfit(Q,T,npol, w=w)
+        fit_qt=np.polyfit(Q,T,npol2, w=w)
 #        print(fit_qt)
         fit_revqt=np.poly1d(fit_qt)
         print(np.sum((fit_revqt(Q) - T)**2)) #residue
@@ -183,16 +202,7 @@ class timetotemp:
         ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
         plt.grid()
         plt.show() 
-        
-        fig1 = plt.figure(10, clear = True)
-        ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('err')
-        ax1.set_xlabel('p_num')
-        ax1.set_title('error in polynomial')
-        ax1.scatter(range(1,20), y, color='blue',s=3)
-#        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
-        plt.grid()
-        plt.show() 
+              
         fit_qt1=tuple(fit_qt)
         print("QtoTF1 time: {}".format(e_t.time()-start_time))
         return fit_qt1
@@ -313,7 +323,8 @@ B=timetotemp(2,10,2000,30050,250)
 #i1,i2=B.pulse_remove(10,5)
 B.nopulse1,B.nopulse2=B.pulse_remove(20,2) # remove pulse and its surroundings
 B.t_fit,B.linTemp=B.temp_fit() # linear fit of T vs time Fork 1. remove nan
-B.TQ=B.QtoTF1(25) # convert Q into T. Fork 1
+B.optim_poly(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],20)
+B.TQ=B.QtoTF1(7,25) # convert Q into T. Fork 1
 
 TQ21=np.asarray(B.TQ)
 tf=np.poly1d(TQ21) # convert Q into T Fork 2
