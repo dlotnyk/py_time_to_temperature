@@ -160,17 +160,30 @@ class timetotemp:
         w[0:200]=5
         w[-200:-1]=5
         y1=[]
+        er=[]
         for i in range(1,npol):
             fit = np.polyfit(x,y,i,w=w)
             fit_fn = np.poly1d(fit) # Q
             y1.append(np.sum((fit_fn(x)-y)**2))
-        print(i)    
-        fig1 = plt.figure(10, clear = True)
-        ax1 = fig1.add_subplot(111)
+            if i is 1:
+                err1=np.sum((fit_fn(x)-y)**2)
+            else:
+                err2=np.sum((fit_fn(x)-y)**2)
+                er.append((err1-err2)/err1)
+                err1=err2
+            
+        fig1 = plt.figure(21, clear = True)
+        ax1 = fig1.add_subplot(211)
         ax1.set_ylabel('err')
         ax1.set_xlabel('p_num')
         ax1.set_title('error in polynomial')
         ax1.scatter(range(1,npol), y1, color='blue',s=3)
+        plt.grid()
+        ax2 = fig1.add_subplot(212)
+        ax2.set_ylabel('err')
+        ax2.set_xlabel('p_num')
+        ax2.set_title('error in polynomial')
+        ax2.scatter(range(2,npol), er, color='blue',s=3)
 #        ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
         plt.grid()
         plt.show() 
@@ -200,7 +213,7 @@ class timetotemp:
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('T')
         ax1.set_xlabel('Q')
-        ax1.set_title('T vs Q')
+        ax1.set_title('T vs Q (QtoTemp prat)')
         ax1.scatter(Q, T, color='blue',s=0.5)
         ax1.plot(Q, fit_revqt(Q), color='red',lw=1)
         plt.grid()
@@ -260,7 +273,7 @@ class timetotemp:
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('T/Tc')
         ax1.set_xlabel('time [sec]')
-        ax1.set_title('T vs time for both forks')
+        ax1.set_title('T vs time for both forks (save to file part)')
         ax1.plot(time1, filt/self.tc[self.set],color='red',lw=1) #/self.tc[self.set]
         ax1.plot(time2,tf2(Q2)/self.tc[self.set],color='green', lw=1)
         ax1.legend(['Fork 1','Fork 2'])
@@ -283,7 +296,7 @@ class timetotemp:
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('tau [sec]')
         ax1.set_xlabel('temperature [mK]')
-        ax1.set_title('tau vs Temperature')
+        ax1.set_title('tau vs Temperature (import taus)')
         ax1.scatter(data[0], data[1], color='blue',s=2)
         ax1.scatter(newT,data[1], color='red',s=2)
         plt.grid()
@@ -339,21 +352,18 @@ B.TQ2=tuple(TQ21)
 B.savetofile()
 
 fig1 = plt.figure(90, clear = True)
-ax1 = fig1.add_subplot(111)
+ax1 = fig1.add_subplot(211)
 ax1.set_ylabel('Q')
 ax1.set_xlabel('time [sec]')
 ax1.set_title('Q vs time for both forks')
 ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
 #ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
 plt.grid()
-plt.show()
-
-fig1 = plt.figure(91, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('Q')
-ax1.set_xlabel('time [sec]')
-ax1.set_title('Q vs time for both forks')
-ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
+ax2 = fig1.add_subplot(212)
+ax2.set_ylabel('Q')
+ax2.set_xlabel('time [sec]')
+ax2.set_title('Q vs time for both forks')
+ax2.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
 #ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
 plt.grid()
 plt.show()
