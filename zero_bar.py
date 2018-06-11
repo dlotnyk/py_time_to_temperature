@@ -32,16 +32,19 @@ class timetotemp:
             self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
             # Fork 2
             self.path2=[self.dir+"20180208\\FF0p6mK.dat",self.dir+"20180209\\FF0p4mK.dat",self.dir+"20180210\\FF0p8mK.dat"]
+            self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
+            self.pulseID=self.pulse_indicies(2) # find indicies of pulses
         elif self.set is 2: # 22 bar
-            self.dir="d:\\therm_transport\\data\\22bar\\" # home dir 0 Bar
-#            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
+#            self.dir="d:\\therm_transport\\data\\22bar\\" # home dir 0 Bar
+            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
             # Fork 1
             self.path1=[self.dir+"20171226\\CF0p62mK.dat",self.dir+"20171227\\CF1p2mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
             self.path2=[self.dir+"20171226\\FF0p62mK.dat",self.dir+"20171227\\FF1p2mK.dat"]#,self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
+            self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
+            self.pulseID=self.pulse_indicies(1) # find indicies of pulses
 #        self.calibration()
-        self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
-        self.pulseID=self.pulse_indicies(1) # find indicies of pulses
+        
         
     def calibration(self):
         '''The sequence of commands to calibrate temperature according to Q's'''
@@ -161,7 +164,7 @@ class timetotemp:
             fit = np.polyfit(x,y,i,w=w)
             fit_fn = np.poly1d(fit) # Q
             y1.append(np.sum((fit_fn(x)-y)**2))
-            
+        print(i)    
         fig1 = plt.figure(10, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('err')
@@ -320,7 +323,7 @@ class timetotemp:
 # main program statrs here
 start_time1=e_t.time()
 B=timetotemp(2,10,2000,30050,250)
-#i1,i2=B.pulse_remove(10,5)
+i1,i2=B.pulse_remove(10,5)
 B.nopulse1,B.nopulse2=B.pulse_remove(20,2) # remove pulse and its surroundings
 B.t_fit,B.linTemp=B.temp_fit() # linear fit of T vs time Fork 1. remove nan
 B.optim_poly(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],20)
@@ -335,27 +338,37 @@ TQ21[-1]+=dt2 # count an offset
 B.TQ2=tuple(TQ21)
 B.savetofile()
 
-#fig1 = plt.figure(90, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
-#ax1.set_xlabel('time [sec]')
-#ax1.set_title('Q vs time for both forks')
-#ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
-##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-#plt.grid()
-#plt.show()
-#
-#fig1 = plt.figure(91, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('Q')
-#ax1.set_xlabel('time [sec]')
-#ax1.set_title('Q vs time for both forks')
-#ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
-##ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-#plt.grid()
-#plt.show()
+fig1 = plt.figure(90, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('Q vs time for both forks')
+ax1.plot(B.rawdata1[0][i1],B.rawdata1[1][i1],color='green', lw=1)
+#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+plt.grid()
+plt.show()
+
+fig1 = plt.figure(91, clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('Q vs time for both forks')
+ax1.plot(B.rawdata2[0][i2],B.rawdata2[1][i2],color='blue', lw=1)
+#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
+plt.grid()
+plt.show()
 del B
 #A=timetotemp(0,20,9200,47000,1800)
+#A.nopulse1,A.nopulse2=A.pulse_remove(20,2) # remove pulse and its surroundings
+#A.t_fit,A.linTemp=A.temp_fit() # linear fit of T vs time Fork 1. remove nan
+#A.TQ=A.QtoTF1(6,13) # convert Q into T. Fork 1
+#TQ21A=np.asarray(A.TQ)
+#tfA=np.poly1d(TQ21A) # convert Q into T Fork 2
+#Q21A=A.rawdata2[1][A.nopulse2]
+#dt2A=A.tc[A.set]-tfA(Q21A[-1])
+#TQ21A[-1]+=dt2A # count an offset
+#A.TQ2=tuple(TQ21A)
+#A.timeT2=A.QtoTF2() # time to a new temperature for Fork 2
 #f1,f2=A.pulse_remove(10,3)
 #A.savetofile()
 #A.importtaus()
