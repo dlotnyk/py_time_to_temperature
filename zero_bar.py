@@ -9,7 +9,7 @@ import numpy as np
 import scipy.signal as ss
 #import sys
 import time as e_t
-
+from mpl_toolkits.mplot3d import Axes3D
 import warnings
 warnings.simplefilter('ignore', np.RankWarning)
 
@@ -153,6 +153,41 @@ class timetotemp:
         print("temp_fit time: {}".format(e_t.time()-start_time))
         return fit1,fit_rev1
     
+    def optim_polies(self,t,q,t_t,npol):
+        '''optimization of QtoT'''
+        start_time=e_t.time()
+        w=np.ones(len(t))
+        w[0:200]=5
+        w[-200:-1]=5
+        tx1=np.poly1d(t_t)
+        tx=tx1(t)
+#        y1=[]
+        fig1 = plt.figure(20, clear = True)
+        ax1 = fig1.add_subplot(111,projection='3d')
+        er=[]
+        num=1
+        for i in range(1,npol):
+            fittQ = np.polyfit(t,q,i,w=w)
+            Q1 = np.poly1d(fittQ)
+            Q=Q1(t)
+            for j in range(2,npol):
+                fitQT=np.polyfit(Q,tx,j)
+                temp1=np.poly1d(fitQT)
+                temp=temp1(Q)
+                if num is 1:
+                    err1=np.sum((temp-tx)**2)
+                    # should be done further
+                    
+                er.append(np.sum((temp-tx)**2))
+                ax1.scatter(i, j, er[-1])
+        ax1.set_ylabel('ttoT_poly')
+        ax1.set_xlabel('QtoT_poly')
+        ax1.set_zlabel('error')
+        ax1.set_zlim(0,10)
+        plt.grid()
+        plt.show()
+        print("Opti polies: {}".format(e_t.time()-start_time))
+        
     def optim_poly(self,x,y,npol):
         '''optimization for degree of polyfit'''
         start_time=e_t.time()
@@ -340,6 +375,7 @@ i1,i2=B.pulse_remove(10,5)
 B.nopulse1,B.nopulse2=B.pulse_remove(20,2) # remove pulse and its surroundings
 B.t_fit,B.linTemp=B.temp_fit() # linear fit of T vs time Fork 1. remove nan
 B.optim_poly(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],20)
+B.optim_polies(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],B.t_fit,20)
 B.TQ=B.QtoTF1(7,25) # convert Q into T. Fork 1
 
 TQ21=np.asarray(B.TQ)
