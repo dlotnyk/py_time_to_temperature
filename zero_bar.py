@@ -26,8 +26,8 @@ class timetotemp:
         self.num2=nums[3]
         self.offset=nums[4]
         if self.set is 0: # zero bar
-            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
-#            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
+#            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
+            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018FEB\\" # work dir
             # Fork 1
             self.path1=[self.dir+"20180208\\CF0p6mK.dat",self.dir+"20180209\\CF0p4mK.dat",self.dir+"20180210\\CF0p8mK.dat"]
             # Fork 2
@@ -37,8 +37,8 @@ class timetotemp:
         elif self.set is 2: # 22 bar
             #self.dir="d:\\therm_transport\\data\\0bar\\2018FEB\\" # home dir 0 Bar
 #            self.dir="d:\\therm_transport\\data\\22bar\\" # home dir 0 Bar
-            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\22bar\\" # home dir 22 Bar
-#            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
+#            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\22bar\\" # home dir 22 Bar
+            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
             # Fork 1
             self.path1=[self.dir+"20171226\\CF0p62mK.dat",self.dir+"20171227\\CF1p2mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
@@ -46,8 +46,8 @@ class timetotemp:
             self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
             self.pulseID=self.pulse_indicies(1) # find indicies of pulses
         elif self.set is 1: # 9psi
-            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\9psi\\2018mar\\" # home dir 22 Bar
-#            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018MAR\\" # work dir
+#            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\9psi\\2018mar\\" # home dir 22 Bar
+            self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2018MAR\\" # work dir
             # Fork 1
             self.path1=[self.dir+"20180315\\CF0p7mK.dat",self.dir+"20180316\\CF0p8mK.dat",self.dir+"20180317\\CF0p9mK.dat"]
             # Fork 2
@@ -390,12 +390,13 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-start_time1=e_t.time()
+#start_time1=e_t.time()
 #C=timetotemp(1,10,10000,53000,700) #9psi
 #i1,i2=C.pulse_remove(10,5)
 #C.nopulse1,C.nopulse2=C.pulse_remove(20,4) # remove pulse and its surroundings
 #C.t_fit,C.linTemp=C.temp_fit(3) # linear fit of T vs time Fork 1. remove nan
-##C.optim_poly(C.rawdata1[0][C.nopulse1],C.rawdata1[1][C.nopulse1],20)
+#
+###C.optim_poly(C.rawdata1[0][C.nopulse1],C.rawdata1[1][C.nopulse1],20)
 #C.TQ=C.QtoTF1(7,25) # convert Q into T. Fork 1
 #TQ23=np.asarray(C.TQ) # coeff for a fork 2
 #tf2f=np.poly1d(TQ23) # convert Q into T Fork 2
@@ -433,7 +434,14 @@ B.t_fit,B.linTemp=B.temp_fit(2) # linear fit of T vs time Fork 1. remove nan
 #B.optim_poly(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],20)
 #B.optim_polies(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],B.t_fit,20)
 B.TQ=B.QtoTF1(7,25) # convert Q into T. Fork 1
-
+fig1 = plt.figure(31,clear = True)
+ax1 = fig1.add_subplot(111)
+ax1.set_ylabel('Q')
+ax1.set_xlabel('time [sec]')
+ax1.set_title('Q vs time raw data')
+ax1.plot(B.rawdata1[0],B.rawdata1[1],color='green', lw=1)
+plt.grid()
+plt.show()
 TQ21=np.asarray(B.TQ)
 tf=np.poly1d(TQ21) # convert Q into T Fork 2
 print(tf(B.rawdata2[1][-1]))
@@ -447,7 +455,7 @@ TQ21[-1]+=dt2 # count an offset
 B.TQ2=tuple(TQ21)
 B.timeT2=B.QtoTF2() # time to a new temperature for Fork 2
 B.savetofile()
-B.importtaus()
+#B.importtaus()
 fig1 = plt.figure(90, clear = True)
 ax1 = fig1.add_subplot(211)
 ax1.set_ylabel('Q')
@@ -482,7 +490,7 @@ del B
 #A.timeT2=A.QtoTF2() # time to a new temperature for Fork 2
 #f1,f2=A.pulse_remove(10,3)
 #A.savetofile()
-#A.importtaus()
+##A.importtaus()
 #tf=np.poly1d(A.TQ2)
 #tf1=np.poly1d(A.TQ)
 #
@@ -507,4 +515,4 @@ del B
 #plt.grid()
 #plt.show()
 #del A
-#print("Total time: {}".format(e_t.time()-start_time1))
+print("Total time: {}".format(e_t.time()-start_time1))
