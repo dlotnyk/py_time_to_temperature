@@ -40,9 +40,9 @@ class timetotemp:
 #            self.dir="f:\\data\\old_hdd_dima\\d\\therm_transport\\data\\22bar\\" # home dir 22 Bar
             self.dir="c:\\Users\\JMP\\Documents\\Thermal Conductivity\\Backup\\2017DEC\\" # work dir
             # Fork 1
-            self.path1=[self.dir+"20171226\\CF0p62mK.dat",self.dir+"20171227\\CF1p2mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
+            self.path1=[self.dir+"20171222\\CF0p5mK.dat",self.dir+"20171223\\CF1p3mK.dat"]#,self.dir+"20171216\\CF1p7mK.dat",self.dir+"20171217\\CF2p3mk.dat"]
             # Fork 2
-            self.path2=[self.dir+"20171226\\FF0p62mK.dat",self.dir+"20171227\\FF1p2mK.dat"]#,self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
+            self.path2=[self.dir+"20171222\\FF0p5mK.dat",self.dir+"20171223\\FF1p3mK.dat"]#,self.dir+"20171216\\FF1p7mK.dat",self.dir+"20171217\\FF2p3mk.dat"]
             self.rawdata1,self.rawdata2=self.import_fun(self.path1,self.path2) # import fork1, fork 2
             self.pulseID=self.pulse_indicies(1) # find indicies of pulses
         elif self.set is 1: # 9psi
@@ -390,7 +390,7 @@ class timetotemp:
         plt.show()
 
 # main program statrs here
-#start_time1=e_t.time()
+start_time1=e_t.time()
 #C=timetotemp(1,10,10000,53000,700) #9psi
 #i1,i2=C.pulse_remove(10,5)
 #C.nopulse1,C.nopulse2=C.pulse_remove(20,4) # remove pulse and its surroundings
@@ -427,7 +427,7 @@ class timetotemp:
 #plt.grid()
 #plt.show()
 #del C
-B=timetotemp(2,10,2000,30050,250) #22 bar
+B=timetotemp(2,10,1,40000,21) #22 bar
 i1,i2=B.pulse_remove(10,5)
 B.nopulse1,B.nopulse2=B.pulse_remove(10,4) # remove pulse and its surroundings
 B.t_fit,B.linTemp=B.temp_fit(2) # linear fit of T vs time Fork 1. remove nan
