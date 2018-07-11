@@ -44,29 +44,40 @@ class pulse:
         
         self.date = nums[6]
         
-        if nums[7] == 1:
-            self.fin = False
-        else:
-            self.fin = True
-        
-        impDir="C:\\Users\\John Wilson\\Documents\\Cornell REU\\Data\\All Data\\"
+        self.impDir = "C:\\Users\\John Wilson\\Documents\\Cornell REU\\Data\\All Data\\"
         
         if self.date == 619 :            
             # Fork 1
-            self.path1 = [impDir+"20180619\\CF1p0mK.dat",impDir+"20180620\\CF2p1mK.dat"]
+            self.path1 = [self.impDir+"20180619\\CF1p0mK.dat",self.impDir+"20180620\\CF2p1mK.dat"]
             
             # Fork 2
-            self.path2 = [impDir+"20180619\\FF1p0mK.dat",impDir+"20180620\\FF2p1mK.dat"]
+            self.path2 = [self.impDir+"20180619\\FF1p0mK.dat",self.impDir+"20180620\\FF2p1mK.dat"]
         
-        elif self.date == 705 :
+        elif self.date == 613 :
             
             # Fork 1
-            self.path1 = [impDir+"20180705\\CF1p7mK.dat"]
+            self.path1 = [self.impDir+"20180613\\CF2p0mK.dat",self.impDir+"20180614\\CF2p2mK.dat"]
                 
             # Fork 2
-            self.path2 = [impDir+"20180705\\FF1p7mK.dat"]
+            self.path2 = [self.impDir+"20180613\\FF2p0mK.dat",self.impDir+"20180614\\FF2p2mK.dat"]
             
+        elif self.date == 612 :
+            
+            # Fork 1
+            self.path1 = [self.impDir+"20180612\\CF2p1mK.dat"]
+                
+            # Fork 2
+            self.path2 = [self.impDir+"20180612\\FF2p1mK.dat"]
         
+        elif self.date == 602 :
+            
+            # Fork 1
+            self.path1 = [self.impDir+"20180602\\CF2p3mK.dat"]
+                
+            # Fork 2
+            self.path2 = [self.impDir+"20180602\\FF2p3mK.dat"]
+            
+            
         self.rawData1,self.rawData2 = self.importData(self.path1),self.importData(self.path2) # import fork 1, fork 2 
         
         n1s = [np.float64( range( 1, len( self.rawData1[0] ) + 1 ) )]
@@ -77,8 +88,7 @@ class pulse:
         
         if self.doneCutting == 0 :
             
-            self.rawData1 = self.cutFunction(self.rawData1)
-            self.rawData2 = self.cutFunction(self.rawData2)
+            self.cutFunction()
         
         elif self.doneCutting == 1:
             
@@ -113,17 +123,31 @@ class pulse:
     
         return(data)
     
-    def cutFunction(self,dataset):
+    def cutFunction(self):
         
         fig1 = plt.figure(1, clear = True)
-        ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('Temp')
-        ax1.set_xlabel('point #')
-        ax1.set_title('Temp vs point #')
-        line, = ax1.plot(dataset[4] + self.start, dataset[2], color='blue', lw=2)
+        ax1 = fig1.add_subplot(311)
+        ax1.set_ylabel('Tmc (mK)')
+        ax1.set_title('Tmc and Q(F1 & F2) vs Point # for cutting for '+ str(self.date))
+        line, = ax1.plot(self.rawData1[4] + self.start, self.rawData1[2], color='blue', lw=2)
         
+        
+        ax1 = fig1.add_subplot(312)
+        ax1.set_ylabel('Fork 2 Q')
+        ax1.scatter( self.rawData1[4]+self.start, self.rawData1[1], color='blue', s=0.5)
+        axes = plt.gca()
+        axes.set_ylim([0,max(self.rawData1[1])])
+        
+        ax1 = fig1.add_subplot(313)
+        ax1.set_ylabel('Fork 1 Q')
+        ax1.set_xlabel('Point #')
+        ax1.scatter( self.rawData1[4]+self.start, self.rawData2[1], color='blue', s=0.5)
+        axes = plt.gca()
+        axes.set_ylim([0,max(self.rawData1[1])])
+
         plt.show()
-    
+        
+        
     def filterPulses(self) :
                  
         a = np.where( abs( self.rawData2[1] ) > 1500 )[0]
@@ -157,18 +181,20 @@ class pulse:
         # Alternatively you could return "treated" data as a whole new data set,
         # but this would waste memory
 
-        
+
         fig1 = plt.figure(1, clear = True)
-        ax1 = fig1.add_subplot(111)
-        ax1.set_ylabel('Q')
-        ax1.set_xlabel('Point #')
-        ax1.set_title('Q vs Point #')
-        ax1.scatter( self.rawData1[4][d]+self.start, self.rawData1[1][d], color='blue', s=0.5)
-#line, = 
-#         + self.start to look at point numbers ( rawdData2[4][d] ) 
+        ax1 = fig1.add_subplot(211)
+        ax1.set_ylabel('Fork 1 Q')
+        ax1.set_title('Q(F1) and Q(F2) vs Time for Pulse Removal for '+ str(self.date))
+        ax1.scatter( self.rawData1[0][d], self.rawData1[1][d], color='blue', s=0.5)
         
-        plt.show()         
         
+        ax1 = fig1.add_subplot(212)
+        ax1.set_ylabel('Fork 2 Q')
+        ax1.set_xlabel('Time (s)')
+        ax1.scatter( self.rawData2[0][d], self.rawData2[1][d], color='blue', s=0.5)
+        plt.show()
+                
         return d, dtemp
 
     
@@ -185,10 +211,10 @@ class pulse:
         fitTemp = fit_fn(self.rawData1[0][self.d])
         
         if self.ramp == -1 :
-            dt = tempC(self.Ppsi) - np.mean(fitTemp[1:30])
+            dt = self.Tc - np.mean(fitTemp[1:30])
             
         elif self.ramp == 1:
-            dt = tempC(self.Ppsi) - np.mean(fitTemp[-30:-1])
+            dt = self.Tc - np.mean(fitTemp[-30:-1])
         
         elif self.ramp != -1 or 1 :
             raise Exception('Specify warming or cooling ramp, and make sure it is cut to Tc at one end')
@@ -198,46 +224,56 @@ class pulse:
         
         fitTemp = fit_fn(self.rawData1[0][self.d])
         
-        fig2 = plt.figure(2, clear = True)
-        ax2 = fig2.add_subplot(111)
-        ax2.set_ylabel('T')
-        ax2.set_xlabel('time')
-        ax2.set_title('T vs time')
+        fig1 = plt.figure(2, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('T (mK)')
+        ax1.set_xlabel('time (s)')
+        ax1.set_title('Tmc and T F1 (corrected fit) vs time for '+ str(self.date))
     
-        ax2.plot(self.rawData1[0][self.d], self.rawData1[2][self.d], color='green',lw=1)
-            
-        ax2.plot(self.rawData1[0][self.d], fit_fn(self.rawData1[0][self.d]), color='blue',lw=1)
-            
+        ax1.plot(self.rawData1[0][self.d], self.rawData1[2][self.d], color='green',lw=1)
+        ax1.plot(self.rawData1[0][self.d], fit_fn(self.rawData1[0][self.d]), color='blue',lw=1)
+        
         plt.grid()
         plt.show()
-            
+        
+        self.rawData1 = np.vstack(( self.rawData1, fit_fn(self.rawData1[0][self.d]) ))
+        # Row 5 (index 4) is now the corrected temperature for rawData1 (Fork 1)
+        # Row 3 (index 3) is still the Tmc temperature (in both rawData1 and rawData2)
+        
         fit1=tuple(fit)
+
+        self.T_fit = fit1
 
         return fit1
 
         
     def QtotimeF1(self,npol1):
-        '''Transformation of Q into Temperature based on Fork1'''
+        ''' Fit Fork 1 with a polynomial + step function for Q(t) '''
                 
-        tempData1 = self.rawData1[1]
-                
+        tempData1 = self.rawData1[1] 
+        # Creates a temporary version of Q values
+        # within fork 1 that we can adjust
+        
         self.timeAB = 0
         self.step = 0
-        
-        for i in range( 40, len(tempData1) - 40 ):
-            # It is entirely arbitrary what range you choose, as long as you know it won't lead
-            # to you calling a point for averaging thats outside your index
+        if self.Pbar >= 21.22 :
+            # If Pbar is below the pcp then there will be no AB transition to identify.
             
-            avg_1 = sum(tempData1[(i + 1):(i + 20)]) / np.float64(len(tempData1[(i + 1):(i + 20)]))
+            # Identify the AB transition
+            for i in range( 40, len(tempData1) - 40 ):
+                # It is entirely arbitrary what range you choose, as long as you know it won't lead
+                # to you calling a point for averaging thats outside your index
             
-            avg_2 = sum(tempData1[(i - 20):i]) / np.float64(len(tempData1[(i - 20):i]))
+                avg_1 = sum(tempData1[(i + 1):(i + 20)]) / np.float64(len(tempData1[(i + 1):(i + 20)]))
             
-            if abs(avg_1 - avg_2) > self.step :
+                avg_2 = sum(tempData1[(i - 20):i]) / np.float64(len(tempData1[(i - 20):i]))
+            
+                if abs(avg_1 - avg_2) > self.step :
                 
-                self.step = avg_1 - avg_2
-                
-                self.pointAB = self.rawData1[4][i]
-                self.timeAB = self.rawData1[0][i]
+                    self.step = avg_1 - avg_2
+                    
+                    self.pointAB = self.rawData1[4][i]
+                    self.timeAB = self.rawData1[0][i]
             
         tempData1 = tempData1 - self.step * np.heaviside( self.rawData1[0] - self.timeAB, 0 )    
         # subtract off the heavisidetheta function and fit the remaining data with a polynomial
@@ -253,16 +289,18 @@ class pulse:
         Qplot = Q + self.step * np.heaviside( self.rawData1[0] - self.timeAB, 0 )
         # Adding in the step function to be able to compare it to the true data
         
-#       Check if Q fit to time is good        
-        fig1 = plt.figure(5, clear = True)
+        # Check if Q fit to time is good        
+        fig1 = plt.figure(3, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('Q')
         ax1.set_xlabel('time')
-        ax1.set_title('Q vs time (Qtotime prat)')
+        ax1.set_title('Fork 1\'s Q and Q fitted vs time ( Both from Fork 1 ) for ' + str(self.date) )
         ax1.scatter(self.rawData1[0][self.d], self.rawData1[1][self.d], color='blue',s=0.5)
         ax1.plot(self.rawData1[0][self.d], Qplot, color='red',lw=1)
         plt.grid()
         plt.show() 
+        
+        self.fit_QtoF1 = qfit
         
         return(qfit)
         
@@ -301,13 +339,18 @@ class pulse:
         self.rawData2 = np.vstack((self.rawData2, self.rawData2[0] - t0, self.rawData2[1] + q0 ))
         # Add new rows for corrected time and q value
         
-        fig1 = plt.figure(7, clear = True)
+        fig1 = plt.figure(4, clear = True)
         ax1 = fig1.add_subplot(111)
         ax1.set_ylabel('Q')
         ax1.set_xlabel('point #')
-        ax1.set_title('Fork 2 Q vs point # and Fork 1 fit')
+        ax1.set_title('Fork 2 Q vs point # and Fork 1 fit for '+ str(self.date))
         ax1.scatter(self.rawData2[4], self.rawData2[6], color='blue',s=0.5)
         line, = ax1.plot(self.rawData1[4], Qplot, color='red', lw=1)
+        ax1.annotate('Tc points should match here', xy=(0, Qplot[0]), xytext=(self.rawData2[4][-1000], self.rawData2[6][1000]),
+#                     arrowprops=dict(facecolor='black', shrink=0.05),
+                     )
+#        self.rawData2[4][-1000],self.rawData2[6][1000]
+        
         
         plt.show()    
     
@@ -317,13 +360,15 @@ class pulse:
         qfit_fn = np.poly1d(qfit) # Q
         
         Q = qfit_fn(self.rawData1[0][self.d])
-        
-        Qplot = Q + self.step * np.heaviside( self.rawData1[0] - self.timeAB, 9000 )
-        
+        u = 0
+        if self.Pbar >= 21.22:
+            u = self.step * np.heaviside( self.rawData1[0] - self.timeAB, 9000 )
+            
+        Qplot = Q + u
         # THe sceond argument of np.haeviside changed to let us skip over the point
         # where the AB transition occurs, otherwise this would raise an error
         
-        newTemp = np.zeros(len(self.rawData2[6]))
+        newTemp = np.full(len(self.rawData2[6]), -0.5)
         
         for i in range(int(self.p0), len(self.rawData2[6])):
             
@@ -334,7 +379,7 @@ class pulse:
         
             a = True
             
-            if Qplot[i] > 9000:
+            if Qplot[i] > 9000 or self.rawData2[6][i] < Qplot[0]:
                 
                 newTemp[i] = newTemp[i-1]
                 
@@ -348,7 +393,7 @@ class pulse:
                 m = (first + last) / 2
                 m = int(m)
                     
-                if abs( Qplot[m] - self.rawData2[6][i] ) < tol :
+                if abs( Qplot[m] - self.rawData2[6][i] ) < tol or abs(first - last) <= 3 :
                         
                     newTemp[i] = self.rawData1[2][m]
                             
@@ -360,70 +405,180 @@ class pulse:
                 elif Qplot[m] > self.rawData2[6][i] :
 
                     last = m + 1
-                            
+                    
+                    
                 elif Qplot[m] < self.rawData2[6][i]:
                                                 
                     first = m - 1
+                     
 
             
         self.rawData2 = np.vstack(( self.rawData2, newTemp ))
-                    
-#    def savetofile(self):
-##    Work in progress to correctly write files to some directory    
-#        '''Write a pulses Temp(time) of true temperature into two .dat files'''
-#        Q1=self.rawData1[1][self.d]
-#        time1=self.rawData1[0][self.d]
-#        
-#        Q2=self.rawData2[1][self.nopulse2]
-#        time2=self.rawData2[0][self.nopulse2]
-#        
-#        path1=self.dir+"Fork13n.dat"
-#        
-#        tf1=np.poly1d(self.TQ)   
-#        
-#        path2=self.dir+"Fork23n.dat"
-#        
-#        tf2=np.poly1d(self.TQ2)
-#        temp2=tf2(Q2)
-#        with open(path1,'w') as file1:
-#            file1.write(str1)
-#        list2=[]
-#        for j in range(len(time2)):
-#            list2.append("{0}\t{1}\t{2}\n".format(time2[j],temp2[j],temp2[j]/self.tc[self.set]))
-#        str2 = ''.join(list2)
-#        with open(path2,'w') as file2:
-#            file2.write(str2)
-                              
-#%% 6/19        
-end = 1000000
-P = pulse(425,-1, 1, 15266, 26500, 10, 100, 619, 0)
-# 15985 to 26500
-# psi, cooling (-1) or warming (1) ? ,done cutting?, start point, stop point, cut from start of pulse, cut from end of pulse
-# 2nd to last number is date
-# last number is done with data treatment
-# If you don't know the end point, start with the variable end in its place, adjust from there as needed
-del end
 
-if P.doneCutting == 1  :
-    
-    P.T_fit = P.temp_fit(1)
-    
-    P.fit_QtoF1 = P.QtotimeF1(7)
-    
-    P.reCallibrateF2(750)
-    
-    P.k_NNsearch(0.05)
-    
-#    P.savetoFile
-#%% RUN THIS SECTION ONLY TO VIEW FINAL RESULTS
-    # Run via ctrl + Enter
+    def savetofile(self):
+        list1=[]
+        for j in range( -1, len(self.rawData1[0]) ):
+            if j == -1:
+                list1.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format('#[ 1 ] Universal Time (s) ','#[ 2 ] T Local (mK)', '#[ 3 ] Tl / Tc', '#[ 4 ] Tmc / Tc', '#[ 5 ] Q', '#[ 6 ] Inferred Frequency (Hz)' ) )
+            else:
+                list1.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(self.rawData1[0][j],self.rawData1[5][j],self.rawData1[5][j]/self.Tc,self.rawData1[2][j]/self.Tc, self.rawData1[1][j],self.rawData1[3][j]))
             
-fig1 = plt.figure(8, clear = True)
-ax1 = fig1.add_subplot(111)
-ax1.set_ylabel('New Temperature')
-ax1.set_xlabel('time')
-ax1.set_title('Fork 2 New Temperature')
-ax1.scatter(P.rawData2[0][P.d],P.rawData2[7][P.d], color='blue',s=0.5)
+        str1 = ''.join(list1)
+        if self.ramp == -1:
+            path1 = self.impDir + 'Python Analysis\\' + '0' + str(self.date) + 'CF ' + str(self.Ppsi) +' psi cooling.dat'
+        if self.ramp == 1:
+            path1 = self.impDir + 'Python Analysis\\' + '0' + str(self.date) + 'CF ' + str(self.Ppsi) +' psi warming.dat'
+        with open(path1,'w') as file1:
+            file1.write(str1)
         
-plt.show()    
+        list2=[]
+        for j in range(-1,len(self.rawData2[0]) ):
+            if j == -1:
+                list2.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format('#[ 1 ] Universal Time (s) ','#[ 2 ] T Local (mK)', '#[ 3 ] Tl / Tc', '#[ 4 ] Tmc / Tc', '#[ 5 ] Q', '#[ 6 ] Inferred Frequency (Hz)') )
+            else:
+                if self.rawData2[7][j] != -0.5 :
+                    list2.append("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n".format(self.rawData2[0][j],self.rawData2[7][j],self.rawData2[7][j]/self.Tc,self.rawData2[2][j]/self.Tc, self.rawData2[1][j], self.rawData2[3][j]))
+            
+        str2 = ''.join(list2)
+        if self.ramp == -1:
+            path2 = self.impDir + 'Python Analysis\\' + '0' + str(self.date) + 'FF '  + str(self.Ppsi) +' psi cooling.dat'
+        if self.ramp == 1:
+            path2 = self.impDir + 'Python Analysis\\' + '0' + str(self.date) + 'FF '  + str(self.Ppsi) +' psi warming.dat'
+        with open(path2,'w') as file2:
+            file2.write(str2)
+        
+#%% Choose a
+a = 4
+
+#%% 6/19    
+
+if a == 1:
+    end = 1000000
+    P1 = pulse(425,-1, 1, 15266, 26500, 10, 100, 619)
+    # 15985 to 26500
+    # psi, cooling (-1) or warming (1) ? ,done cutting?, start point, stop point, cut from start of pulse, cut from end of pulse
+    # 2nd to last number is date
+    # last number is done with data treatment
+    # If you don't know the end point, start with the variable end in its place, adjust from there as needed
+    
+    del end
+    
+    if P1.doneCutting == 1  :
+        
+        P1.temp_fit(1)
+        print(P1.T_fit)
+        P1.QtotimeF1(7)
+        print(P1.fit_QtoF1)
+        print(P1.step,P1.timeAB)
+        
+        P1.reCallibrateF2(750)
+#        750
+        P1.k_NNsearch(0.05)
+        
+        P1.savetofile()
+        
+        
+#%% 613
+
+if a == 2:
+    end = 1000000
+    P2 = pulse(363,-1, 1, 15487, 25500, 10, 100, 613)
+    # 15487 to 25500
+    # psi, cooling (-1) or warming (1) ? ,done cutting?, start point, stop point, cut from start of pulse, cut from end of pulse
+    # 2nd to last number is date
+    # last number is done with data treatment
+    # If you don't know the end point, start with the variable end in its place, adjust from there as needed
+
+    del end
+    
+    if P2.doneCutting == 1  :
+    
+        P2.temp_fit(1)
+        print(P2.T_fit)
+        P2.QtotimeF1(7)
+        print(P2.fit_QtoF1)
+        
+        P2.reCallibrateF2(1080)
+#        1080
+        P2.k_NNsearch(0.05)
+        P2.savetofile()
+  
+
+#%% 612
+
+if a == 3:
+    end = 1000000
+    P3 = pulse(303.5,-1, 1, 13289, 14474, 10, 100, 612)
+    #  13289 to 15000
+    # psi, cooling (-1) or warming (1) ? ,done cutting?, start point, stop point, cut from start of pulse, cut from end of pulse
+    # 2nd to last number is date
+    # last number is done with data treatment
+    # If you don't know the end point, start with the variable end in its place, adjust from there as needed
+
+    del end
+    
+    if P3.doneCutting == 1  :
+    
+        P3.temp_fit(2)
+        print(P3.T_fit)
+        P3.QtotimeF1(7)
+        print(P3.fit_QtoF1)
+        
+        P3.reCallibrateF2(272)
+#        272
+        P3.k_NNsearch(0.05)
+        P3.savetofile()
+
+
+
+#%% 602
+if a == 4:
+    end = 1000000
+    P4 = pulse(306,-1, 0, 7540, 9400, 10, 100, 602)
+    #  7540 to 9400
+    # psi, cooling (-1) or warming (1) ? ,done cutting?, start point, stop point, cut from start of pulse, cut from end of pulse
+    # 2nd to last number is date
+    # last number is done with data treatment
+    # If you don't know the end point, start with the variable end in its place, adjust from there as needed
+
+    del end
+    
+    if P4.doneCutting == 1  :
+    
+        P4.temp_fit(2)
+        print(P4.T_fit)
+        P4.QtotimeF1(7)
+        print(P4.fit_QtoF1)
+        
+        P4.reCallibrateF2(272)
+#        272
+        P4.k_NNsearch(0.05)
+        P4.savetofile()
+
+#%% RUN THIS SECTION ONLY TO VIEW FINAL RESULTS
+        # Run via ctrl + Enter
+                
+        fig1 = plt.figure(100, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('Tlocal / Tc')
+        ax1.set_xlabel('Tmc / Tc')
+        ax1.set_title('Fork 2 Local Temperature vs Melting Curve Temperature for 6/19')
+        ax1.scatter(( P1.rawData2[2][P1.d] )/P1.Tc,(P1.rawData2[7][P1.d])/P1.Tc, color='blue',s=0.5)
+        ax1.annotate('AB Transition in fork 1', xy=(0.756, 0.754), xytext=(0.85, 0.7),
+                     arrowprops=dict(facecolor='black', shrink=0.05),
+                     )
+        axes = plt.gca()
+        axes.set_ylim([0.6,1.1])
+            
+        plt.show()    
+        
+        fig1 = plt.figure(200, clear = True)
+        ax1 = fig1.add_subplot(111)
+        ax1.set_ylabel('Tfit / Tc')
+        ax1.set_xlabel('Q')
+        ax1.set_title('Fork 1 Q to Tfit / Tc for 6/19')
+        ax1.scatter(P1.rawData1[1][P1.d],(P1.rawData1[5][P1.d])/P1.Tc, color='blue',s=0.5)
+        
+        plt.show()    
+        
 
