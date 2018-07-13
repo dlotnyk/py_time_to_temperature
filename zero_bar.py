@@ -403,7 +403,16 @@ start_time1=e_t.time()
 
 C=timetotemp(1,10,10000,53000,700) #9psi
 i1,i2=C.pulse_remove(10,5)
-C.nopulse1,C.nopulse2=C.pulse_remove(10,5) # remove pulse and its surroundings
+C.nopulse1,C.nopulse2=C.pulse_remove(10,6) # remove pulse and its surroundings
+C.nopulse1[13000:14000]=False
+C.nopulse2[13000:14000]=False
+C.rawdata1[0][14000:]-=C.rawdata1[0][14001]-C.rawdata1[0][12999]
+C.rawdata2[0][14000:]-=C.rawdata2[0][14001]-C.rawdata2[0][12999]
+C.nopulse1[15000:16000]=False
+C.nopulse2[15000:16000]=False
+C.rawdata1[0][16000:]-=C.rawdata1[0][16001]-C.rawdata1[0][14999]
+C.rawdata2[0][16000:]-=C.rawdata2[0][16001]-C.rawdata2[0][14999]
+
 C.t_fit,C.linTemp=C.temp_fit(3) # linear fit of T vs time Fork 1. remove nan
 
 ##C.optim_poly(C.rawdata1[0][C.nopulse1],C.rawdata1[1][C.nopulse1],20)
