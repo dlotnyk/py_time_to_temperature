@@ -315,7 +315,7 @@ class timetotemp:
         tmc2=ptmc(time2)
         path1=self.dir+"Fork13n.dat"
         tf1=np.poly1d(self.TQ)
-        filt=ss.medfilt(tf1(Q1),31) #filtering fork 1        
+        filt=ss.medfilt(tf1(Q1),11) #filtering fork 1        
         path2=self.dir+"Fork23n.dat"
         tf2=np.poly1d(self.TQ2)
         temp2=tf2(Q2)
@@ -403,15 +403,15 @@ start_time1=e_t.time()
 
 C=timetotemp(1,10,10000,53000,700) #9psi
 i1,i2=C.pulse_remove(10,5)
-C.nopulse1,C.nopulse2=C.pulse_remove(10,6) # remove pulse and its surroundings
-C.nopulse1[13000:14000]=False
-C.nopulse2[13000:14000]=False
-C.rawdata1[0][14000:]-=C.rawdata1[0][14001]-C.rawdata1[0][12999]
-C.rawdata2[0][14000:]-=C.rawdata2[0][14001]-C.rawdata2[0][12999]
-C.nopulse1[15000:16000]=False
-C.nopulse2[15000:16000]=False
-C.rawdata1[0][16000:]-=C.rawdata1[0][16001]-C.rawdata1[0][14999]
-C.rawdata2[0][16000:]-=C.rawdata2[0][16001]-C.rawdata2[0][14999]
+C.nopulse1,C.nopulse2=C.pulse_remove(20,3) # remove pulse and its surroundings
+#C.nopulse1[13000:14000]=False
+#C.nopulse2[13000:14000]=False
+#C.rawdata1[0][14000:]-=C.rawdata1[0][14001]-C.rawdata1[0][12999]
+#C.rawdata2[0][14000:]-=C.rawdata2[0][14001]-C.rawdata2[0][12999]
+#C.nopulse1[15000:16000]=False
+#C.nopulse2[15000:16000]=False
+#C.rawdata1[0][16000:]-=C.rawdata1[0][16001]-C.rawdata1[0][14999]
+#C.rawdata2[0][16000:]-=C.rawdata2[0][16001]-C.rawdata2[0][14999]
 
 C.t_fit,C.linTemp=C.temp_fit(3) # linear fit of T vs time Fork 1. remove nan
 
@@ -431,7 +431,7 @@ C.timeT2=C.QtoTF2() # time to a new temperature for Fork 2
 C.savetofile()
 C.importtaus()
 
-filt=ss.medfilt(C.rawdata1[1][C.nopulse1],31) #filtering fork 1
+filt=ss.medfilt(C.rawdata1[1][C.nopulse1],11) #filtering fork 1
 
 fig1 = plt.figure(11, clear = True)
 ax1 = fig1.add_subplot(211)
@@ -453,7 +453,7 @@ del C
 
 #B=timetotemp(2,10,1000,41000,1) #22 bar
 #i1,i2=B.pulse_remove(10,5)
-#B.nopulse1,B.nopulse2=B.pulse_remove(10,2) # remove pulse and its surroundings
+#B.nopulse1,B.nopulse2=B.pulse_remove(10,1) # remove pulse and its surroundings
 #B.t_fit,B.linTemp=B.temp_fit(4) # linear fit of T vs time Fork 1. remove nan
 ##B.optim_poly(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],20)
 ##B.optim_polies(B.rawdata1[0][B.nopulse1],B.rawdata1[1][B.nopulse1],B.t_fit,20)
@@ -480,7 +480,7 @@ del C
 #TQ21[-1]+=dt2 # count an offset
 #B.TQ2=tuple(TQ21)
 #B.timeT2=B.QtoTF2() # time to a new temperature for Fork 2
-#filt1=ss.medfilt(B.rawdata1[1][B.nopulse1],31) #filtering fork 1
+#filt1=ss.medfilt(B.rawdata1[1][B.nopulse1],11) #filtering fork 1
 #B.savetofile()
 ##B.importtaus()
 #fig1 = plt.figure(13, clear = True)
@@ -501,7 +501,7 @@ del C
 #plt.show()
 #del B
 #A=timetotemp(0,20,9200,47000,1800) # zero bar
-#A.nopulse1,A.nopulse2=A.pulse_remove(20,2) # remove pulse and its surroundings
+#A.nopulse1,A.nopulse2=A.pulse_remove(1,1) # remove pulse and its surroundings
 #A.t_fit,A.linTemp=A.temp_fit(1) # linear fit of T vs time Fork 1. remove nan
 #A.TQ=A.QtoTF1(6,13) # convert Q into T. Fork 1
 #TQ21A=np.asarray(A.TQ)
@@ -522,23 +522,24 @@ del C
 #tf1=np.poly1d(A.TQ)
 #
 #temp1=tf1(A.rawdata1[1][f1])
-#filt=ss.medfilt(temp1,11)
+##filt=ss.medfilt(temp1,11)
 #temp=tf(A.rawdata2[1][f2])
-#fig1 = plt.figure(1, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('T/Tc')
-#ax1.set_xlabel('time [sec]')
-#ax1.set_title('T vs time for both forks')
-#ax1.plot(A.rawdata2[0][f2],temp/A.tc[A.set],color='green', lw=1)
-#ax1.plot(A.rawdata1[0][f1],filt/A.tc[A.set],color='blue', lw=1)
-#plt.grid()
-#plt.show()
+#filt=ss.medfilt(A.rawdata1[1][A.nopulse1],11) #filtering fork 1
+#
 #fig1 = plt.figure(11, clear = True)
-#ax1 = fig1.add_subplot(111)
-#ax1.set_ylabel('1/Q')
-#ax1.set_xlabel('Df [sec]')
-#ax1.set_title('1/Q vs df for both forks')
-#ax1.scatter(A.rawdata1[3][f1]-A.rawdata1[3][-1],1/A.rawdata1[1][f1],color='blue', s=0.5)
+#ax1 = fig1.add_subplot(211)
+#ax1.set_ylabel('Q')
+#ax1.set_xlabel('time [sec]')
+#ax1.set_title('Q vs time for both forks')
+#ax1.scatter(A.rawdata1[0][A.nopulse1],A.rawdata1[1][A.nopulse1],color='green', s=0.5)
+#ax1.scatter(A.rawdata1[0][A.nopulse1],filt,color='red', s=0.5)
+##ax1.scatter(C.rawdata1[0][C.nopulse1],C.rawdata1[1][C.nopulse1],color='red', s=0.5)
+#ax2 = fig1.add_subplot(212)
+#ax2.set_ylabel('T')
+#ax2.set_xlabel('time [sec]')
+#ax2.set_title('T vs time for both forks')
+#ax2.scatter(A.rawdata1[0][A.nopulse1],A.rawdata1[2][A.nopulse1],color='green', s=0.5)
+#
 #plt.grid()
 #plt.show()
 #del A
