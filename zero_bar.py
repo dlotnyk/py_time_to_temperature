@@ -1,3 +1,8 @@
+
+
+
+
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  2 12:09:15 2018
@@ -397,6 +402,28 @@ class timetotemp:
         ax2.scatter(X, Y, color='blue',s=0.5)
         plt.grid()
         plt.show()
+    
+    def dTdT(self,n1):
+        '''calculate dT(F1)/dT(F2) vs Tmc/Tc'''
+#        print("pulse0= ",self.pulseID[0])
+        num=10
+        Q1=self.rawdata1[1][self.pulseID[0]+n1:self.pulseID[0]+n1+num]
+        Q2=self.rawdata2[1][self.pulseID[0]+n1:self.pulseID[0]+n1+num]
+        tq1=np.poly1d(self.TQ)
+        tq2=np.poly1d(self.TQ2)
+        temp1=tq1(Q1)
+        temp2=tq2(Q2)
+        fig2 = plt.figure(21, clear = True)
+        ax2 = fig2.add_subplot(111)
+        ax2.set_ylabel("Q")
+        ax2.set_xlabel("time")
+        ax2.set_title('Q vs T')
+        ax2.plot(self.rawdata1[0][self.pulseID[0]+n1:self.pulseID[0]+n1+num], temp1,color='green',lw=1)
+        ax2.plot(self.rawdata2[0][self.pulseID[0]+n1:self.pulseID[0]+n1+num], temp2,color='red',lw=1)
+        ax2.legend(['HE Fork','Iso Fork'])
+        plt.grid()
+        plt.show()
+    
 
 # main program statrs here
 start_time1=e_t.time()
@@ -412,9 +439,7 @@ C.nopulse1,C.nopulse2=C.pulse_remove(20,3) # remove pulse and its surroundings
 #C.nopulse2[15000:16000]=False
 #C.rawdata1[0][16000:]-=C.rawdata1[0][16001]-C.rawdata1[0][14999]
 #C.rawdata2[0][16000:]-=C.rawdata2[0][16001]-C.rawdata2[0][14999]
-
 C.t_fit,C.linTemp=C.temp_fit(3) # linear fit of T vs time Fork 1. remove nan
-
 ##C.optim_poly(C.rawdata1[0][C.nopulse1],C.rawdata1[1][C.nopulse1],20)
 C.TQ=C.QtoTF1(7,25) # convert Q into T. Fork 1
 TQ23=np.asarray(C.TQ) # coeff for a fork 2
@@ -430,7 +455,7 @@ C.TQ2=tuple(TQ23)
 C.timeT2=C.QtoTF2() # time to a new temperature for Fork 2
 C.savetofile()
 C.importtaus()
-
+C.dTdT(50)
 filt=ss.medfilt(C.rawdata1[1][C.nopulse1],11) #filtering fork 1
 
 fig1 = plt.figure(11, clear = True)
