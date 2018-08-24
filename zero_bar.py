@@ -339,7 +339,7 @@ class timetotemp:
         tmc2=ptmc(time2)
         path1=self.dir+"Fork13n.dat"
         tf1=np.poly1d(self.TQ)
-        filt=ss.medfilt(tf1(Q1),11) #filtering fork 1        
+        filt=ss.medfilt(tf1(Q1),31) #filtering fork 1        
         path2=self.dir+"Fork23n.dat"
         tf2=np.poly1d(self.TQ2)
         temp2=tf2(Q2)
@@ -421,6 +421,51 @@ class timetotemp:
         ax2.scatter(X, Y, color='blue',s=0.5)
         plt.grid()
         plt.show()
+        
+    def realTempfit(self,num1,num2):
+        '''fitting of the real temperature for dT/dT part'''
+        tf1=np.poly1d(self.TQ)
+        tf2=np.poly1d(self.TQ2)
+        num3=100
+        num4=50
+        bpulse1=np.zeros(np.shape(self.rawdata1)[1],dtype=bool)
+#        bpulse2=np.zeros(np.shape(self.rawdata2)[1],dtype=bool)
+        for ii in self.pulseID:
+            bpulse1[ii-num3:ii-num4]=True
+        T1=tf1(self.rawdata1[1][self.nopulse1])
+        Tfilt=ss.medfilt(T1,41)
+        Tfilt1=tf1(self.rawdata1[1][bpulse1])
+        T2=tf2(self.rawdata2[1][bpulse1])
+        fit1 = np.polyfit(self.rawdata1[0][bpulse1],Tfilt1,num1)
+        fit2 = np.polyfit(self.rawdata2[0][bpulse1],T2,num2)
+        ff1=np.poly1d(fit1)
+        ff2=np.poly1d(fit2)
+        
+        fig1=plt.figure(23, clear = True)
+        ax1 = fig1.add_subplot(211)
+        ax1.set_xlabel("time")
+        ax1.set_ylabel("T_real")
+        ax1.set_title('Real temperature vs time')
+#        ax1.plot(self.rawdata1[0][self.nopulse1], -ff1(self.rawdata1[0][self.nopulse1])+Tfilt1+0.5,color='green',lw=1)
+        ax1.scatter(self.rawdata1[0][bpulse1], Tfilt1,color='green',lw=1)
+        ax1.plot(self.rawdata1[0][self.nopulse1], ff1(self.rawdata1[0][self.nopulse1]),'--g',lw=1)
+#        ax1.plot(self.rawdata2[0][self.nopulse2], T2-ff2(self.rawdata2[0][self.nopulse2]),color='blue',lw=1)
+        ax1.scatter(self.rawdata2[0][bpulse1], T2,color='blue',lw=1)
+        ax1.plot(self.rawdata2[0][self.nopulse2], ff2(self.rawdata2[0][self.nopulse2]),'--b',lw=1)
+        ax1.legend(['Fork 1','fit F1','Fork 2','fit F2'])
+#        ax1.set_ylim(0,1)
+        plt.grid()
+        ax2 = fig1.add_subplot(212)
+        ax2.set_xlabel("time")
+        ax2.set_ylabel("dT_real")
+        ax2.set_title('Real temperature vs time')
+        ax2.plot(self.rawdata1[0][self.nopulse1], Tfilt-ff1(self.rawdata1[0][self.nopulse1])+0.5,color='green',lw=1)
+        ax2.plot(self.rawdata2[0][self.nopulse2], tf2(self.rawdata2[1][self.nopulse2])-ff2(self.rawdata2[0][self.nopulse2]),color='blue',lw=1)
+        ax2.legend(['dTFork 1','dTFork 2'])
+#        ax1.set_ylim(0,1)
+        plt.grid()
+        plt.show()  
+        return fit1,fit2
     
     def dTdT(self,n1):
         '''calculate dT(F1)/dT(F2) vs Tmc/Tc'''
@@ -432,22 +477,24 @@ class timetotemp:
 #        print(np.shape(dt_dt))
         f_q1=np.poly1d(self.fit_q1)
         f_q2=np.poly1d(self.fit_q2)
+        tq1=np.poly1d(self.TQ)
+        tq2=np.poly1d(self.TQ2)
+        tback_q1=np.poly1d(self.rtf1)
+        tback_q2=np.poly1d(self.rtf2)
         temp_fun=np.poly1d(self.t_fit)
-        Qfilt=ss.medfilt(self.rawdata1[1],21) #filtering fork 1
+        Qfilt=ss.medfilt(self.rawdata1[1],11) #filtering fork 1
         count=0
         list1=[]
         list1.append("{0}\t{1}\n".format("dT(F1)/dT(F2)","T_mc/Tc"))
         for ii in self.pulseID:           
-            Q1_t=f_q1(self.rawdata1[0][ii+n1:ii+n1+num]) # background
-            Q2_t=f_q2(self.rawdata2[0][ii+n1:ii+n1+num])
+            temp1t=tback_q1(self.rawdata1[0][ii+n1:ii+n1+num]) # background
+            temp2t=tback_q2(self.rawdata2[0][ii+n1:ii+n1+num])
             Q1=Qfilt[ii+n1:ii+n1+num] # the actual values
-            Q2=self.rawdata2[1][ii+n1:ii+n1+num]
-            tq1=np.poly1d(self.TQ)
-            tq2=np.poly1d(self.TQ2)
+            Q2=self.rawdata2[1][ii+n1:ii+n1+num]            
             temp1=tq1(Q1)
             temp2=tq2(Q2)
-            temp1t=tq1(Q1_t) # background
-            temp2t=tq2(Q2_t)
+#            temp1t=tq1(Q1_t) # background
+#            temp2t=tq2(Q2_t)
             dt1=np.abs(np.mean(temp1t)-np.mean(temp1))
             dt2=np.abs(np.mean(temp2t)-np.mean(temp2))
             T_mc[count]=np.mean(temp_fun(self.rawdata1[0][ii+n1:ii+n1+num]))/self.tc[self.set]
@@ -467,7 +514,7 @@ class timetotemp:
         with open(path,'w') as file1:
             file1.write(str1)
 #        print(dt1,dt2,dtdt,tmc)
-#        fig2 = plt.figure(21, clear = True)
+#        fig2 = plt.figure(23, clear = True)
 #        ax2 = fig2.add_subplot(111)
 #        ax2.set_ylabel("T")
 #        ax2.set_xlabel("time")
@@ -563,6 +610,7 @@ B.TQ2=tuple(TQ21)
 B.timeT2=B.QtoTF2() # time to a new temperature for Fork 2
 filt1=ss.medfilt(B.rawdata1[1][B.nopulse1],11) #filtering fork 1
 B.savetofile()
+B.rtf1,B.rtf2=B.realTempfit(8,8) # real temperature fork 1/2
 B.dTdT(20)
 #B.importtaus()
 fig1 = plt.figure(13, clear = True)
